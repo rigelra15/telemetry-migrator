@@ -23,10 +23,15 @@ function readBaseUrl() {
       const content = fs.readFileSync(envPath, 'utf-8');
       const match = content.match(/BASE_URL=(.+)/);
       if (match) {
-        return match[1].trim();
+        // Strip \r (Windows line ending) and whitespace
+        const url = match[1].trim().replace(/\r/g, '');
+        console.log(`[Config] Read BASE_URL from: ${envPath}`);
+        console.log(`[Config] BASE_URL = ${url}`);
+        return url;
       }
     }
   }
+  console.warn('[Config] No .env found, using default demo URL');
   return 'https://demo.thingsboard.io';
 }
 

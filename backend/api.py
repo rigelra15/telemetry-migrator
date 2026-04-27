@@ -41,7 +41,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Telemetry Migration API", lifespan=lifespan)
 
 # Get configuration from environment
-BASE_URL = os.getenv("BASE_URL", "https://demo.thingsboard.io")
+BASE_URL = os.getenv("BASE_URL", "https://demo.thingsboard.io").strip().rstrip("/")
+logger.info(f"[Config] BASE_URL from env: '{BASE_URL}'")
 
 # CORS middleware untuk frontend
 app.add_middleware(
@@ -55,6 +56,18 @@ app.add_middleware(
 # Path untuk auth files
 AUTH_DIR = "auth"
 os.makedirs(AUTH_DIR, exist_ok=True)
+
+# Check for persisted config (from Settings UI) — overrides env-based BASE_URL
+_config_file = os.path.join("config.json")
+if os.path.exists(_config_file):
+    try:
+        with open(_config_file, 'r') as f:
+            _saved_config = json.load(f)
+        if _saved_config.get("BASE_URL"):
+            BASE_URL = _saved_config["BASE_URL"].strip().rstrip("/")
+            logger.info(f"[Config] BASE_URL overridden from config.json: '{BASE_URL}'")
+    except Exception as e:
+        logger.warning(f"Failed to read config.json: {e}")
 
 # Path untuk session dan history files
 DATA_DIR = "data"
@@ -312,6 +325,36 @@ async def get_config():
     return {
         "baseURL": BASE_URL
     }
+
+class BaseUrlUpdate(BaseModel):
+    baseUrl: str
+
+@app.post("/api/config/base-url")
+async def update_base_url(data: BaseUrlUpdate):
+    """Update BASE_URL at runtime and persist to config file"""
+    global BASE_URL
+    
+    new_url = data.baseUrl.strip().rstrip("/")
+    if not new_url.startswith("http"):
+        raise HTTPException(status_code=400, detail="URL must start with http:// or https://")
+    
+    BASE_URL = new_url
+    logger.info(f"[Config] BASE_URL updated to: '{BASE_URL}'")
+    
+    # Persist to config file in data directory
+    config_file = os.path.join(AUTH_DIR, '..', 'config.json')
+    try:
+        config = {}
+        if os.path.exists(config_file):
+            with open(config_file, 'r') as f:
+                config = json.load(f)
+        config['BASE_URL'] = BASE_URL
+        with open(config_file, 'w') as f:
+            json.dump(config, f, indent=2)
+    except Exception as e:
+        logger.warning(f"Failed to persist config: {e}")
+    
+    return {"success": True, "baseURL": BASE_URL}
 
 @app.get("/api/auth/status")
 async def get_auth_status():

@@ -19,8 +19,17 @@
 
   <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
     <div class="w-full max-w-5xl bg-white p-4 sm:p-6 rounded-2xl shadow-xl">
-      <!-- Language Toggle Button (Top Right) -->
-      <div class="flex justify-end mb-2">
+      <!-- Top Right Controls -->
+      <div class="flex justify-end mb-2 gap-2">
+        <button
+          type="button"
+          id="settingsBtn"
+          onclick="openSettingsModal()"
+          class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700"
+          title="Settings"
+        >
+          <span class="iconify" data-icon="mdi:cog"></span>
+        </button>
         <button
           type="button"
           id="langToggleBtn"
@@ -222,6 +231,65 @@
       </div>
     </div>
 
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] hidden">
+      <div id="settingsModalContent" class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden transform scale-90 opacity-0 transition-all duration-300">
+        <!-- Header -->
+        <div class="px-6 py-5 bg-gray-800">
+          <div class="flex items-center gap-3">
+            <div class="bg-white bg-opacity-20 rounded-xl p-2.5">
+              <span class="iconify text-white text-2xl" data-icon="mdi:cog"></span>
+            </div>
+            <div>
+              <h3 class="text-white font-bold text-lg">Settings</h3>
+              <p class="text-white text-opacity-70 text-xs" id="settingsAppVersion">App Configuration</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="px-6 py-5">
+          <!-- BASE_URL Setting -->
+          <div class="mb-4">
+            <label class="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+              <span class="iconify text-gray-500" data-icon="mdi:link-variant"></span>
+              ThingsBoard Base URL
+            </label>
+            <input
+              id="settingsBaseUrl"
+              type="url"
+              class="w-full border border-gray-300 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              placeholder="https://your-thingsboard-server.com"
+            />
+            <p class="text-xs text-gray-400 mt-1.5 flex items-start gap-1">
+              <span class="iconify shrink-0 mt-0.5" data-icon="mdi:information-outline"></span>
+              <span>Example: <code class="bg-gray-100 px-1 rounded text-gray-600">https://flexiot.xlsmart.co.id</code> or <code class="bg-gray-100 px-1 rounded text-gray-600">https://demo.thingsboard.io</code></span>
+            </p>
+          </div>
+
+          <!-- Current status -->
+          <div id="settingsStatus" class="hidden mb-4">
+            <div class="flex items-center gap-2 text-green-700 bg-green-50 p-2.5 rounded-lg border border-green-200">
+              <span class="iconify text-lg" data-icon="mdi:check-circle"></span>
+              <span class="font-medium text-xs">Settings saved successfully!</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer buttons -->
+        <div class="px-6 pb-5 flex gap-3">
+          <button onclick="closeSettingsModal()" class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center gap-2">
+            <span class="iconify" data-icon="mdi:close"></span>
+            Cancel
+          </button>
+          <button onclick="saveSettings()" class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-gray-800 hover:bg-gray-700 transition-all hover:shadow-lg flex items-center justify-center gap-2">
+            <span class="iconify" data-icon="mdi:content-save"></span>
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Update Available Modal -->
     <div id="updateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] hidden">
       <div id="updateModalContent" class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden transform scale-90 opacity-0 transition-all duration-300">
@@ -334,6 +402,75 @@
         } else {
           input.type = 'password';
           icon.setAttribute('data-icon', 'mdi:eye');
+        }
+      }
+
+      // ==================== SETTINGS MODAL ====================
+      async function openSettingsModal() {
+        const modal = document.getElementById('settingsModal');
+        const content = document.getElementById('settingsModalContent');
+        document.getElementById('settingsStatus').classList.add('hidden');
+
+        // Load current config
+        try {
+          if (window.API_URL) {
+            const res = await axios.get(`${window.API_URL}/api/config`);
+            document.getElementById('settingsBaseUrl').value = res.data.baseURL || '';
+          }
+        } catch (e) {
+          console.error('Failed to load config:', e);
+        }
+
+        // Show version if available
+        if (window.electronAPI && window.electronAPI.getAppVersion) {
+          try {
+            const ver = await window.electronAPI.getAppVersion();
+            document.getElementById('settingsAppVersion').textContent = `Version ${ver}`;
+          } catch (e) {}
+        }
+
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+          content.classList.remove('scale-90', 'opacity-0');
+          content.classList.add('scale-100', 'opacity-100');
+        });
+      }
+
+      function closeSettingsModal() {
+        const content = document.getElementById('settingsModalContent');
+        content.classList.remove('scale-100', 'opacity-100');
+        content.classList.add('scale-90', 'opacity-0');
+        setTimeout(() => {
+          document.getElementById('settingsModal').classList.add('hidden');
+        }, 300);
+      }
+
+      async function saveSettings() {
+        const newUrl = document.getElementById('settingsBaseUrl').value.trim();
+        if (!newUrl) {
+          showToast('Please enter a valid URL.', 'error');
+          return;
+        }
+        if (!newUrl.startsWith('http://') && !newUrl.startsWith('https://')) {
+          showToast('URL must start with http:// or https://', 'error');
+          return;
+        }
+
+        try {
+          const res = await axios.post(`${window.API_URL}/api/config/base-url`, { baseUrl: newUrl });
+          if (res.data.success) {
+            // Update local config reference
+            if (window.config) window.config.baseURL = res.data.baseURL;
+            
+            document.getElementById('settingsStatus').classList.remove('hidden');
+            showToast('Base URL updated successfully!', 'success');
+            
+            // Close modal after a brief delay
+            setTimeout(() => closeSettingsModal(), 1200);
+          }
+        } catch (error) {
+          const detail = error.response?.data?.detail || 'Failed to save settings.';
+          showToast(detail, 'error');
         }
       }
 
