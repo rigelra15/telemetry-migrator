@@ -1,6 +1,6 @@
 {
   "name": "telemetry-migrator",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Tool untuk migrasi data telemetri antar sistem ThingsBoard",
   "main": "main.js",
   "scripts": {
@@ -35,9 +35,7 @@
     },
     "files": [
       "main.js",
-      "preload.js",
-      "frontend/**/*",
-      "backend/**/*"
+      "preload.js"
     ],
     "mac": {
       "category": "public.app-category.utilities",

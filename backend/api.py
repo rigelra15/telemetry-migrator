@@ -1155,11 +1155,25 @@ from fastapi.staticfiles import StaticFiles
 
 # Prioritas: env var FRONTEND_DIR > relative path (development)
 frontend_dir = os.getenv("FRONTEND_DIR", os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'frontend'))
+
+if not os.path.exists(frontend_dir):
+    # Fallback to sys.executable directory (for PyInstaller bundled .exe)
+    import sys
+    if getattr(sys, 'frozen', False):
+        exe_dir = os.path.dirname(sys.executable) # Ini adalah folder 'bin'
+        fallback_dir = os.path.join(exe_dir, '..', 'frontend')
+        if os.path.exists(fallback_dir):
+            frontend_dir = fallback_dir
+
 if os.path.exists(frontend_dir):
     app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
     logger.info(f"Serving frontend from: {frontend_dir}")
 else:
-    logger.warning(f"Frontend directory not found: {frontend_dir}")
+    logger.error(f"Frontend directory not found: {frontend_dir}")
+    # Mount a dummy route so it doesn't just show a blank 404
+    @app.get("/")
+    def fallback_route():
+        return {"error": "Frontend UI files not found. Please check your build configuration."}
 
 if __name__ == "__main__":
     import uvicorn
