@@ -35,8 +35,9 @@ function startPythonBackend() {
   let args = [];
 
   // Lokasi writable untuk data (auth, logs, session)
+  // Gunakan 'userData' bawaan Electron (~/.config/App, AppData/Roaming, dll) agar SELALU writable
   const dataDir = app.isPackaged
-    ? path.join(path.dirname(app.getPath('exe')), 'data')
+    ? path.join(app.getPath('userData'), 'backend_data')
     : path.join(__dirname, 'backend');
 
   // Pastikan data directory ada
