@@ -1,0 +1,55 @@
+name: Build and Release Portable App
+
+on:
+  push:
+    tags:
+      - 'v*.*.*' # Trigger otomatis saat ada tag v1.0.0, v1.0.1, dst.
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11' # Gunakan versi stabil
+          
+      - name: Setup Python Virtual Environment
+        run: |
+          python -m venv venv
+        shell: bash
+
+      - name: Install Backend Dependencies
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            venv\Scripts\activate
+          else
+            source venv/bin/activate
+          fi
+          pip install -r backend/requirements.txt
+          pip install pyinstaller
+        shell: bash
+
+      - name: Install Frontend Dependencies
+        run: npm ci || npm install
+
+      - name: Build Backend Executable
+        run: npm run build-backend
+
+      - name: Build Electron App and Publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --publish always
