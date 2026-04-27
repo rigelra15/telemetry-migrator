@@ -1,0 +1,1126 @@
+// Backend API URL
+const API_URL = "http://localhost:8000";
+
+let config = null;
+
+async function loadConfig() {
+  try {
+    const res = await fetch(`${API_URL}/api/config`);
+    config = await res.json();
+    console.log("Config loaded:", config);
+  } catch (error) {
+    console.error("Failed to load config:", error);
+    alert("Failed to load configuration from backend");
+  }
+}
+loadConfig();
+
+// ================= LOGIN =================
+
+const sourceLogin = document.getElementById("sourceLogin");
+const destLogin = document.getElementById("destLogin");
+
+if (sourceLogin && destLogin) {
+  // Check login status on page load
+  checkLoginStatus();
+
+  sourceLogin.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!config) return alert("Config not loaded");
+
+    const username = sourceUsername.value;
+    const password = sourcePassword.value;
+
+    try {
+      const res = await axios.post(`${API_URL}/api/login/source`, {
+        username,
+        password,
+      });
+
+      if (res.data.success) {
+        sourceMsg.innerHTML = '<span class="iconify text-green-600" data-icon="mdi:check-circle"></span> Source OK';
+        
+        // Show logged in state
+        document.getElementById("sourceLogin").classList.add("hidden");
+        document.getElementById("sourceLoggedIn").classList.remove("hidden");
+        document.getElementById("sourceUsernameDisplay").textContent = username;
+        
+        await checkLoginStatus();
+      }
+    } catch (error) {
+      sourceMsg.innerHTML = '<span class="iconify text-red-600" data-icon="mdi:close-circle"></span> Login Failed';
+      console.error(error);
+    }
+  });
+
+  destLogin.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!config) return alert("Config not loaded");
+
+    const username = destUsername.value;
+    const password = destPassword.value;
+
+    try {
+      const res = await axios.post(`${API_URL}/api/login/destination`, {
+        username,
+        password,
+      });
+
+      if (res.data.success) {
+        destMsg.innerHTML = '<span class="iconify text-green-600" data-icon="mdi:check-circle"></span> Destination OK';
+        
+        // Show logged in state
+        document.getElementById("destLogin").classList.add("hidden");
+        document.getElementById("destLoggedIn").classList.remove("hidden");
+        document.getElementById("destUsernameDisplay").textContent = username;
+        
+        await checkLoginStatus();
+      }
+    } catch (error) {
+      destMsg.innerHTML = '<span class="iconify text-red-600" data-icon="mdi:close-circle"></span> Login Failed';
+      console.error(error);
+    }
+  });
+
+  async function checkLoginStatus() {
+    try {
+      const res = await axios.get(`${API_URL}/api/auth/status`);
+      
+      // Update UI based on login status
+      if (res.data.sourceLoggedIn) {
+        document.getElementById("sourceLogin").classList.add("hidden");
+        document.getElementById("sourceLoggedIn").classList.remove("hidden");
+        // Use username from backend if available
+        const username = res.data.sourceUsername || sourceUsername.value || "***";
+        document.getElementById("sourceUsernameDisplay").textContent = username;
+      }
+      
+      if (res.data.destLoggedIn) {
+        document.getElementById("destLogin").classList.add("hidden");
+        document.getElementById("destLoggedIn").classList.remove("hidden");
+        const username = res.data.destUsername || destUsername.value || "***";
+        document.getElementById("destUsernameDisplay").textContent = username;
+      }
+      
+      // Show next button if both logged in
+      if (res.data.bothLoggedIn) {
+        document.getElementById("nextButtonContainer").classList.remove("hidden");
+      }
+    } catch (error) {
+      console.error("Failed to check login status:", error);
+    }
+  }
+}
+
+// Change account functions
+async function changeSourceAccount() {
+  try {
+    await axios.delete(`${API_URL}/api/logout?target=source`);
+    // Clear saved form data when logging out
+    sessionStorage.clear();
+    document.getElementById("sourceLogin").classList.remove("hidden");
+    document.getElementById("sourceLoggedIn").classList.add("hidden");
+    document.getElementById("sourceUsername").value = "";
+    document.getElementById("sourcePassword").value = "";
+    document.getElementById("sourceMsg").innerHTML = "";
+    document.getElementById("nextButtonContainer").classList.add("hidden");
+  } catch (error) {
+    console.error("Logout failed:", error);
+  }
+}
+
+async function changeDestAccount() {
+  try {
+    await axios.delete(`${API_URL}/api/logout?target=destination`);
+    // Clear saved form data when logging out
+    sessionStorage.clear();
+    document.getElementById("destLogin").classList.remove("hidden");
+    document.getElementById("destLoggedIn").classList.add("hidden");
+    document.getElementById("destUsername").value = "";
+    document.getElementById("destPassword").value = "";
+    document.getElementById("destMsg").innerHTML = "";
+    document.getElementById("nextButtonContainer").classList.add("hidden");
+  } catch (error) {
+    console.error("Logout failed:", error);
+  }
+}
+
+function goToSourcePage() {
+  window.location.href = "source.html";
+}
+
+// ================= KEYS DIALOG =================
+
+let allKeys = [];
+let selectedKeys = new Set();
+
+async function openKeysDialog() {
+  const entityType = document.getElementById("senderEntityType").value.trim().toUpperCase();
+  const entityId = document.getElementById("senderEntityId").value.trim();
+
+  if (!entityType || !entityId) {
+    alert("Please enter Entity Type and Entity ID first!");
+    return;
+  }
+
+  // Show modal
+  const modal = document.getElementById("keysModal");
+  const loading = document.getElementById("keysLoading");
+  const error = document.getElementById("keysError");
+  const keysList = document.getElementById("keysList");
+
+  modal.classList.remove("hidden");
+  loading.classList.remove("hidden");
+  error.classList.add("hidden");
+  keysList.classList.add("hidden");
+
+  // Parse existing keys from input
+  const currentKeys = document.getElementById("senderKeys").value;
+  selectedKeys = new Set(currentKeys.split(",").map(k => k.trim()).filter(k => k));
+
+  try {
+    // Fetch keys from backend
+    const res = await axios.get(`${API_URL}/api/keys`, {
+      params: { entityType, entityId }
+    });
+
+    if (res.data.success) {
+      allKeys = res.data.keys;
+      
+      // Hide loading, show list
+      loading.classList.add("hidden");
+      keysList.classList.remove("hidden");
+
+      // Update count
+      document.getElementById("keysCount").textContent = `${allKeys.length} keys available`;
+
+      // Render keys
+      renderKeys(allKeys);
+    }
+  } catch (error) {
+    console.error("Error fetching keys:", error);
+    loading.classList.add("hidden");
+    error.classList.remove("hidden");
+    
+    const errorMsg = error.response?.data?.detail || error.message || "Unknown error";
+    document.getElementById("keysErrorMessage").textContent = errorMsg;
+  }
+}
+
+function renderKeys(keys) {
+  const container = document.getElementById("keysContainer");
+  container.innerHTML = "";
+
+  if (keys.length === 0) {
+    container.innerHTML = '<p class="text-gray-500 text-center py-8">No keys found</p>';
+    return;
+  }
+
+  keys.forEach(key => {
+    const isChecked = selectedKeys.has(key);
+    const div = document.createElement("div");
+    div.className = "flex items-center gap-2 p-2 rounded hover:bg-gray-50";
+    div.innerHTML = `
+      <input
+        type="checkbox"
+        id="key-${key}"
+        value="${key}"
+        ${isChecked ? "checked" : ""}
+        onchange="toggleKey('${key}')"
+        class="w-4 h-4 rounded"
+        style="accent-color: #1E22AA;"
+      />
+      <label for="key-${key}" class="flex-1 cursor-pointer text-sm text-gray-700">
+        ${key}
+      </label>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function toggleKey(key) {
+  if (selectedKeys.has(key)) {
+    selectedKeys.delete(key);
+  } else {
+    selectedKeys.add(key);
+  }
+}
+
+function filterKeys() {
+  const search = document.getElementById("keysSearch").value.toLowerCase();
+  const filtered = allKeys.filter(key => key.toLowerCase().includes(search));
+  renderKeys(filtered);
+  document.getElementById("keysCount").textContent = `${filtered.length} of ${allKeys.length} keys`;
+}
+
+function selectAllKeys() {
+  const search = document.getElementById("keysSearch").value.toLowerCase();
+  const filtered = allKeys.filter(key => key.toLowerCase().includes(search));
+  filtered.forEach(key => selectedKeys.add(key));
+  renderKeys(filtered);
+}
+
+function clearAllKeys() {
+  const search = document.getElementById("keysSearch").value.toLowerCase();
+  const filtered = allKeys.filter(key => key.toLowerCase().includes(search));
+  filtered.forEach(key => selectedKeys.delete(key));
+  renderKeys(filtered);
+}
+
+function applySelectedKeys() {
+  const keysInput = document.getElementById("senderKeys");
+  keysInput.value = Array.from(selectedKeys).join(", ");
+  closeKeysDialog();
+}
+
+function closeKeysDialog() {
+  document.getElementById("keysModal").classList.add("hidden");
+  document.getElementById("keysSearch").value = "";
+}
+
+function toggleSelectKeysButton() {
+  const entityType = document.getElementById("senderEntityType")?.value.trim();
+  const entityId = document.getElementById("senderEntityId")?.value.trim();
+  const selectBtn = document.getElementById("selectKeysBtn");
+  
+  if (selectBtn) {
+    if (entityType && entityId) {
+      selectBtn.disabled = false;
+      selectBtn.classList.remove("opacity-50", "cursor-not-allowed");
+      selectBtn.classList.add("hover:bg-gray-50", "cursor-pointer");
+    } else {
+      selectBtn.disabled = true;
+      selectBtn.classList.add("opacity-50", "cursor-not-allowed");
+      selectBtn.classList.remove("hover:bg-gray-50", "cursor-pointer");
+    }
+  }
+}
+
+// ================= SOURCE =================
+
+const senderForm = document.getElementById("senderForm");
+
+if (senderForm) {
+  // Initialize Select Keys button state on page load
+  toggleSelectKeysButton();
+  
+  // Restore saved form data from sessionStorage
+  const savedParams = sessionStorage.getItem("migrationParams");
+  if (savedParams) {
+    try {
+      const params = JSON.parse(savedParams);
+      if (params.entityType) document.getElementById("senderEntityType").value = params.entityType;
+      if (params.entityId) document.getElementById("senderEntityId").value = params.entityId;
+      if (params.keys) document.getElementById("senderKeys").value = params.keys;
+      if (params.limit) document.getElementById("senderLimit").value = params.limit;
+      if (params.start) document.getElementById("senderStart").value = convertMillisToDatetimeLocal(params.start);
+      if (params.end) document.getElementById("senderEnd").value = convertMillisToDatetimeLocal(params.end);
+      // Update Select Keys button state after restoring data
+      toggleSelectKeysButton();
+    } catch (e) {
+      console.error("Failed to restore source form data:", e);
+    }
+  }
+  
+  // Check auth status on page load
+  (async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/auth/status`);
+      if (!res.data.bothLoggedIn) {
+        alert("Please login first!");
+        window.location.href = "index.html";
+        return;
+      }
+    } catch (error) {
+      console.error("Auth check failed:", error);
+      window.location.href = "index.html";
+    }
+  })();
+
+  senderForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const params = {
+      entityType: senderEntityType.value.toUpperCase(),
+      entityId: senderEntityId.value,
+      keys: senderKeys.value.trim(),
+      limit: parseInt(senderLimit.value),
+      start: convertToMillisUTC(senderStart.value),
+      end: convertToMillisUTC(senderEnd.value),
+      rangeMode: document.getElementById("rangeMode").value
+    };
+
+    // Save to sessionStorage instead of localStorage
+    sessionStorage.setItem("migrationParams", JSON.stringify(params));
+    
+    // Save to history
+    saveSourceHistory(params);
+
+    window.location.href = "destination.html";
+  });
+}
+
+// ================= DESTINATION =================
+
+const receiverForm = document.getElementById("receiverForm");
+
+if (receiverForm) {
+  // Restore saved target config from sessionStorage
+  const savedTarget = sessionStorage.getItem("targetConfig");
+  if (savedTarget) {
+    try {
+      const target = JSON.parse(savedTarget);
+      if (target.targetEntityType) document.getElementById("receiverEntityType").value = target.targetEntityType;
+      if (target.targetEntityId) document.getElementById("receiverEntityId").value = target.targetEntityId;
+    } catch (e) {
+      console.error("Failed to restore destination form data:", e);
+    }
+  }
+  
+  // Check auth status on page load
+  (async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/auth/status`);
+      if (!res.data.bothLoggedIn) {
+        alert("Please login first!");
+        window.location.href = "index.html";
+        return;
+      }
+    } catch (error) {
+      console.error("Auth check failed:", error);
+      window.location.href = "index.html";
+    }
+  })();
+
+  receiverForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!config) return alert("Config not loaded");
+
+    const params = JSON.parse(sessionStorage.getItem("migrationParams"));
+    if (!params) return alert("Missing source parameters");
+
+    const targetEntityType = receiverEntityType.value.toUpperCase();
+    const targetEntityId = receiverEntityId.value;
+    const scope = document.getElementById("receiverScope").value;
+
+    const targetConfig = {
+      targetEntityType,
+      targetEntityId,
+      scope
+    };
+
+    // Save target config to sessionStorage
+    sessionStorage.setItem("targetConfig", JSON.stringify(targetConfig));
+    
+    // Save to history
+    saveDestinationHistory(targetConfig);
+
+    // Navigate to migrate page
+    window.location.href = "migrate.html";
+  });
+}
+
+// ================= MIGRATE =================
+
+const startMigrationBtn = document.getElementById("startMigrationBtn");
+const migrationSummary = document.getElementById("migrationSummary");
+
+if (startMigrationBtn && migrationSummary) {
+  // Check auth status and load usernames on page load
+  (async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/auth/status`);
+      if (!res.data.bothLoggedIn) {
+        alert("Please login first!");
+        window.location.href = "index.html";
+        return;
+      }
+      
+      // Display usernames with same layout as other fields
+      const sourceUsernameHtml = `
+        <div>
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="iconify text-sm text-gray-600" data-icon="mdi:account"></span>
+            <span class="text-xs text-gray-600 font-medium uppercase tracking-wide">Account</span>
+          </div>
+          <div class="border-t border-gray-300 pt-1.5">
+            <span class="font-medium text-gray-800">${res.data.sourceUsername || "N/A"}</span>
+          </div>
+        </div>
+      `;
+      const destUsernameHtml = `
+        <div>
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="iconify text-sm text-gray-600" data-icon="mdi:account"></span>
+            <span class="text-xs text-gray-600 font-medium uppercase tracking-wide">Account</span>
+          </div>
+          <div class="border-t border-gray-300 pt-1.5">
+            <span class="font-medium text-gray-800">${res.data.destUsername || "N/A"}</span>
+          </div>
+        </div>
+      `;
+      document.getElementById("sourceUsername").innerHTML = sourceUsernameHtml;
+      document.getElementById("destUsername").innerHTML = destUsernameHtml;
+    } catch (error) {
+      console.error("Auth check failed:", error);
+      window.location.href = "index.html";
+    }
+  })();
+
+  // Load and display migration summary
+  const params = JSON.parse(sessionStorage.getItem("migrationParams"));
+  const targetConfig = JSON.parse(sessionStorage.getItem("targetConfig"));
+
+  if (!params || !targetConfig) {
+    alert("Missing migration configuration!");
+    window.location.href = "source.html";
+  } else {
+    // Format timestamps to DD/MM/YYYY HH:mm:ss
+    const formatDate = (timestamp) => {
+      const date = new Date(timestamp);
+      const day = String(date.getDate()).padStart(2, '0');
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+               'July', 'August', 'September', 'October', 'November', 'December'];
+      const month = monthNames[date.getMonth()];
+      const year = date.getFullYear();
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+      return `${day} ${month} ${year} ${hours}:${minutes}:${seconds}`;
+    };
+
+    // Fetch source entity info
+    (async () => {
+      try {
+        const sourceEntityRes = await axios.get(`${API_URL}/api/entity/info`, {
+          params: {
+            entityType: params.entityType,
+            entityId: params.entityId,
+            source: 'source'
+          }
+        });
+        const entityName = (sourceEntityRes.data.success && sourceEntityRes.data.name) ? sourceEntityRes.data.name : '-';
+        const entityNameHtml = `
+          <div>
+            <div class="flex items-center gap-1.5 mb-1">
+              <span class="iconify text-sm text-gray-600" data-icon="mdi:tag"></span>
+              <span class="text-xs text-gray-600 font-medium uppercase tracking-wide">Entity Name</span>
+            </div>
+            <div class="border-t border-gray-300 pt-1.5">
+              <span class="font-medium text-gray-800">${entityName}</span>
+            </div>
+          </div>
+        `;
+        document.getElementById("sourceEntityName").innerHTML = entityNameHtml;
+      } catch (error) {
+        console.error("Failed to fetch source entity info:", error);
+        // Show - when failed
+        const entityNameHtml = `
+          <div>
+            <div class="flex items-center gap-1.5 mb-1">
+              <span class="iconify text-sm text-gray-600" data-icon="mdi:tag"></span>
+              <span class="text-xs text-gray-600 font-medium uppercase tracking-wide">Entity Name</span>
+            </div>
+            <div class="border-t border-gray-300 pt-1.5">
+              <span class="font-medium text-gray-800">-</span>
+            </div>
+          </div>
+        `;
+        document.getElementById("sourceEntityName").innerHTML = entityNameHtml;
+      }
+    })();
+
+    // Fetch destination entity info
+    (async () => {
+      try {
+        const destEntityRes = await axios.get(`${API_URL}/api/entity/info`, {
+          params: {
+            entityType: targetConfig.targetEntityType,
+            entityId: targetConfig.targetEntityId,
+            source: 'destination'
+          }
+        });
+        const entityName = (destEntityRes.data.success && destEntityRes.data.name) ? destEntityRes.data.name : '-';
+        const entityNameHtml = `
+          <div>
+            <div class="flex items-center gap-1.5 mb-1">
+              <span class="iconify text-sm text-gray-600" data-icon="mdi:tag"></span>
+              <span class="text-xs text-gray-600 font-medium uppercase tracking-wide">Entity Name</span>
+            </div>
+            <div class="border-t border-gray-300 pt-1.5">
+              <span class="font-medium text-gray-800">${entityName}</span>
+            </div>
+          </div>
+        `;
+        document.getElementById("destEntityName").innerHTML = entityNameHtml;
+      } catch (error) {
+        console.error("Failed to fetch destination entity info:", error);
+        // Show - when failed
+        const entityNameHtml = `
+          <div>
+            <div class="flex items-center gap-1.5 mb-1">
+              <span class="iconify text-sm text-gray-600" data-icon="mdi:tag"></span>
+              <span class="text-xs text-gray-600 font-medium uppercase tracking-wide">Entity Name</span>
+            </div>
+            <div class="border-t border-gray-300 pt-1.5">
+              <span class="font-medium text-gray-800">-</span>
+            </div>
+          </div>
+        `;
+        document.getElementById("destEntityName").innerHTML = entityNameHtml;
+      }
+    })();
+
+    // Display summary with more details
+    document.getElementById("summarySource").innerHTML = `
+      <div class="space-y-4">
+        <!-- Entity Type -->
+        <div>
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="iconify text-sm text-gray-600" data-icon="mdi:shape"></span>
+            <span class="text-xs text-gray-600 font-medium uppercase tracking-wide">Entity Type</span>
+          </div>
+          <div class="border-t border-gray-300 pt-1.5">
+            <span class="font-medium text-gray-800">${params.entityType}</span>
+          </div>
+        </div>
+        
+        <!-- Entity ID -->
+        <div>
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="iconify text-sm text-gray-600" data-icon="mdi:identifier"></span>
+            <span class="text-xs text-gray-600 font-medium uppercase tracking-wide">Entity ID</span>
+          </div>
+          <div class="border-t border-gray-300 pt-1.5">
+            <div class="flex items-center gap-2">
+              <span class="font-mono text-xs text-gray-700 flex-1 break-all">${params.entityId}</span>
+              <button onclick="navigator.clipboard.writeText('${params.entityId}'); this.querySelector('.iconify').setAttribute('data-icon', 'mdi:check'); setTimeout(() => this.querySelector('.iconify').setAttribute('data-icon', 'mdi:content-copy'), 1000)" class="flex-shrink-0 p-1 hover:bg-gray-200 rounded transition" title="Copy to clipboard">
+                <span class="iconify text-gray-600" data-icon="mdi:content-copy"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Keys -->
+        <div>
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="iconify text-sm text-gray-600" data-icon="mdi:key"></span>
+            <span class="text-xs text-gray-600 font-medium uppercase tracking-wide">Keys</span>
+          </div>
+          <div class="border-t border-gray-300 pt-1.5">
+            <span class="text-xs text-gray-700">${params.keys}</span>
+          </div>
+        </div>
+        
+        <!-- Start Time -->
+        <div>
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="iconify text-sm text-gray-600" data-icon="mdi:clock-start"></span>
+            <span class="text-xs text-gray-600 font-medium uppercase tracking-wide">Start Time (UTC)</span>
+          </div>
+          <div class="border-t border-gray-300 pt-1.5">
+            <span class="text-xs text-gray-700">${formatDate(params.start)}</span>
+          </div>
+        </div>
+        
+        <!-- End Time -->
+        <div>
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="iconify text-sm text-gray-600" data-icon="mdi:clock-end"></span>
+            <span class="text-xs text-gray-600 font-medium uppercase tracking-wide">End Time (UTC)</span>
+          </div>
+          <div class="border-t border-gray-300 pt-1.5">
+            <span class="text-xs text-gray-700">${formatDate(params.end)}</span>
+          </div>
+        </div>
+        
+        <!-- Limit -->
+        <div>
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="iconify text-sm text-gray-600" data-icon="mdi:counter"></span>
+            <span class="text-xs text-gray-600 font-medium uppercase tracking-wide">Limit per Request</span>
+          </div>
+          <div class="border-t border-gray-300 pt-1.5">
+            <span class="font-medium text-gray-800">${params.limit.toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+    `;
+    document.getElementById("summaryDestination").innerHTML = `
+      <div class="space-y-4">
+        <!-- Entity Type -->
+        <div>
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="iconify text-sm text-gray-600" data-icon="mdi:shape"></span>
+            <span class="text-xs text-gray-600 font-medium uppercase tracking-wide">Entity Type</span>
+          </div>
+          <div class="border-t border-gray-300 pt-1.5">
+            <span class="font-medium text-gray-800">${targetConfig.targetEntityType}</span>
+          </div>
+        </div>
+        
+        <!-- Entity ID -->
+        <div>
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="iconify text-sm text-gray-600" data-icon="mdi:identifier"></span>
+            <span class="text-xs text-gray-600 font-medium uppercase tracking-wide">Entity ID</span>
+          </div>
+          <div class="border-t border-gray-300 pt-1.5">
+            <div class="flex items-center gap-2">
+              <span class="font-mono text-xs text-gray-700 flex-1 break-all">${targetConfig.targetEntityId}</span>
+              <button onclick="navigator.clipboard.writeText('${targetConfig.targetEntityId}'); this.querySelector('.iconify').setAttribute('data-icon', 'mdi:check'); setTimeout(() => this.querySelector('.iconify').setAttribute('data-icon', 'mdi:content-copy'), 1000)" class="flex-shrink-0 p-1 hover:bg-gray-200 rounded transition" title="Copy to clipboard">
+                <span class="iconify text-gray-600" data-icon="mdi:content-copy"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Start migration handler
+  startMigrationBtn.addEventListener("click", async () => {
+    if (!config) return alert("Config not loaded");
+
+    const params = JSON.parse(sessionStorage.getItem("migrationParams"));
+    const targetConfig = JSON.parse(sessionStorage.getItem("targetConfig"));
+
+    if (!params || !targetConfig) {
+      alert("Missing migration configuration!");
+      return;
+    }
+
+    const box = document.getElementById("statusBox");
+    const progressSection = document.getElementById("progressSection");
+    const progressBar = document.getElementById("progressBar");
+    const navButtons = document.getElementById("navigationButtons");
+    const startButtonContainer = document.getElementById("startButtonContainer");
+
+    // Hide start button container, show progress
+    if (startButtonContainer) startButtonContainer.classList.add("hidden");
+    progressSection.classList.remove("hidden");
+
+    box.textContent = "Initializing migration...\n";
+    progressBar.style.width = "10%";
+
+    try {
+      // Check auth status first
+      const authCheck = await axios.get(`${API_URL}/api/auth/status`);
+      if (!authCheck.data.bothLoggedIn) {
+        box.innerHTML = '<div class="flex items-center gap-2 text-red-400 font-bold"><span class="iconify text-2xl" data-icon="mdi:alert-circle"></span><span>Error: Please login to both source and destination systems first!</span></div>';
+        navButtons.classList.remove("hidden");
+        return;
+      }
+
+      progressBar.style.width = "20%";
+
+      // Get batch size from settings (default 100)
+      const batchSize = parseInt(sessionStorage.getItem("migrationBatchSize") || "100");
+
+      // Start migration on backend
+      const response = await axios.post(`${API_URL}/api/migrate`, {
+        entityType: params.entityType,
+        entityId: params.entityId,
+        keys: params.keys,
+        limit: params.limit,
+        start: params.start,
+        end: params.end,
+        targetEntityType: targetConfig.targetEntityType,
+        targetEntityId: targetConfig.targetEntityId,
+        batchSize: batchSize,
+      });
+
+      progressBar.style.width = "30%";
+
+      if (response.data.success) {
+        box.innerHTML = '<div class="flex items-center gap-2"><span class="iconify text-blue-400 animate-spin" data-icon="mdi:loading"></span><span>Migration started! Monitoring progress...</span></div>\n\n';
+        
+        // Poll status endpoint
+        const pollInterval = setInterval(async () => {
+          try {
+            const statusRes = await axios.get(`${API_URL}/api/status`);
+            const status = statusRes.data;
+            
+            // Update progress bar (estimate based on completion)
+            if (status.running) {
+              const currentWidth = parseFloat(progressBar.style.width);
+              if (currentWidth < 90) {
+                progressBar.style.width = (currentWidth + 5) + "%";
+              }
+            }
+            
+            // Update status box with progress
+            let progressHtml = status.progress;
+            
+            // Add loading spinner if still running
+            if (status.running && !status.completed && !status.error) {
+              progressHtml = '<div class="flex items-center gap-2 mb-2"><span class="iconify text-blue-400 animate-spin" data-icon="mdi:loading"></span><span class="text-blue-400">Processing...</span></div>\n' + progressHtml;
+            }
+            
+            box.innerHTML = progressHtml;
+            
+            // Check if completed or error
+            if (status.completed) {
+              clearInterval(pollInterval);
+              progressBar.style.width = "100%";
+              box.innerHTML = progressHtml.replace(/<div class="flex.*?<\/div>\n/, '') + '\n\n<div class="flex items-center gap-2 text-green-400 font-bold mt-4"><span class="iconify text-2xl" data-icon="mdi:check-circle"></span><span>Migration completed successfully!</span></div>';
+              navButtons.classList.remove("hidden");
+              // Clear saved form data after successful migration
+              sessionStorage.clear();
+            } else if (status.error) {
+              clearInterval(pollInterval);
+              progressBar.style.width = "100%";
+              progressBar.style.background = "linear-gradient(to right, #EF4444, #DC2626)";
+              box.innerHTML = progressHtml.replace(/<div class="flex.*?<\/div>\n/, '') + `\n\n<div class="flex items-center gap-2 text-red-400 font-bold mt-4"><span class="iconify text-2xl" data-icon="mdi:alert-circle"></span><span>Error occurred: ${status.error}</span></div>`;
+              navButtons.classList.remove("hidden");
+            } else if (!status.running && status.progress) {
+              // Migration finished (either success or error)
+              clearInterval(pollInterval);
+              progressBar.style.width = "100%";
+              navButtons.classList.remove("hidden");
+            }
+          } catch (error) {
+            console.error("Error polling status:", error);
+          }
+        }, 1000); // Poll every 1 second
+      }
+    } catch (error) {
+      progressBar.style.width = "100%";
+      progressBar.style.background = "linear-gradient(to right, #EF4444, #DC2626)";
+      box.innerHTML += `\n\n<div class="flex items-center gap-2 text-red-400 font-bold mt-4"><span class="iconify text-2xl" data-icon="mdi:alert-circle"></span><span>Error starting migration: ${error.response?.data?.detail || error.message}</span></div>`;
+      navButtons.classList.remove("hidden");
+    }
+  });
+}
+
+// ================= HELPERS =================
+
+function convertToMillisUTC(str) {
+  // Handle datetime-local format: YYYY-MM-DDTHH:MM:SS
+  const date = new Date(str);
+  return date.getTime();
+}
+
+function convertMillisToDatetimeLocal(millis) {
+  // Convert milliseconds to datetime-local format: YYYY-MM-DDTHH:MM:SS
+  const date = new Date(millis);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+}
+
+// ================= MIGRATION SETTINGS =================
+
+function openMigrationSettings() {
+  // Load saved batch size or default to 100
+  const savedBatchSize = sessionStorage.getItem("migrationBatchSize") || "100";
+  document.getElementById("batchSizeInput").value = savedBatchSize;
+  document.getElementById("settingsModal").classList.remove("hidden");
+}
+
+function closeMigrationSettings() {
+  document.getElementById("settingsModal").classList.add("hidden");
+}
+
+function saveMigrationSettings() {
+  const batchSize = parseInt(document.getElementById("batchSizeInput").value);
+  
+  if (isNaN(batchSize) || batchSize < 1 || batchSize > 1000) {
+    alert("Invalid batch size. Please enter a number between 1 and 1000.");
+    return;
+  }
+  
+  sessionStorage.setItem("migrationBatchSize", batchSize.toString());
+  closeMigrationSettings();
+  
+  // Show confirmation
+  const settingsBtn = document.getElementById("settingsBtn");
+  if (settingsBtn) {
+    const originalText = settingsBtn.innerHTML;
+    settingsBtn.innerHTML = '<span class="iconify text-lg text-green-600" data-icon="mdi:check-circle"></span> Saved';
+    setTimeout(() => {
+      settingsBtn.innerHTML = originalText;
+    }, 2000);
+  }
+}
+
+function rerunMigration() {
+  // Confirm before rerunning
+  if (confirm("Run migration again with the same configuration?")) {
+    // Reload the page to reset the UI and allow user to start migration again
+    window.location.reload();
+  }
+}
+
+// ================= MIGRATION HISTORY =================
+
+const MAX_HISTORY = 10;
+
+function saveSourceHistory(data) {
+  try {
+    let history = JSON.parse(localStorage.getItem("sourceHistory") || "[]");
+    
+    // Add timestamp
+    const historyItem = {
+      ...data,
+      timestamp: Date.now(),
+      id: Date.now() // unique ID
+    };
+    
+    // Add to beginning of array
+    history.unshift(historyItem);
+    
+    // Keep only MAX_HISTORY items
+    history = history.slice(0, MAX_HISTORY);
+    
+    localStorage.setItem("sourceHistory", JSON.stringify(history));
+  } catch (error) {
+    console.error("Failed to save source history:", error);
+  }
+}
+
+function saveDestinationHistory(data) {
+  try {
+    let history = JSON.parse(localStorage.getItem("destinationHistory") || "[]");
+    
+    // Add timestamp
+    const historyItem = {
+      ...data,
+      timestamp: Date.now(),
+      id: Date.now()
+    };
+    
+    // Add to beginning of array
+    history.unshift(historyItem);
+    
+    // Keep only MAX_HISTORY items
+    history = history.slice(0, MAX_HISTORY);
+    
+    localStorage.setItem("destinationHistory", JSON.stringify(history));
+  } catch (error) {
+    console.error("Failed to save destination history:", error);
+  }
+}
+
+function loadSourceHistory() {
+  try {
+    return JSON.parse(localStorage.getItem("sourceHistory") || "[]");
+  } catch (error) {
+    console.error("Failed to load source history:", error);
+    return [];
+  }
+}
+
+function loadDestinationHistory() {
+  try {
+    return JSON.parse(localStorage.getItem("destinationHistory") || "[]");
+  } catch (error) {
+    console.error("Failed to load destination history:", error);
+    return [];
+  }
+}
+
+function deleteSourceHistory(id) {
+  try {
+    let history = loadSourceHistory();
+    history = history.filter(item => item.id !== id);
+    localStorage.setItem("sourceHistory", JSON.stringify(history));
+    renderSourceHistory();
+  } catch (error) {
+    console.error("Failed to delete source history:", error);
+  }
+}
+
+function deleteDestinationHistory(id) {
+  try {
+    let history = loadDestinationHistory();
+    history = history.filter(item => item.id !== id);
+    localStorage.setItem("destinationHistory", JSON.stringify(history));
+    renderDestinationHistory();
+  } catch (error) {
+    console.error("Failed to delete destination history:", error);
+  }
+}
+
+function applySourceHistory(id) {
+  const history = loadSourceHistory();
+  const item = history.find(h => h.id === id);
+  
+  if (!item) return;
+  
+  // Fill form fields
+  document.getElementById("senderEntityType").value = item.entityType || "";
+  document.getElementById("senderEntityId").value = item.entityId || "";
+  document.getElementById("senderKeys").value = item.keys || "";
+  document.getElementById("senderLimit").value = item.limit || "";
+  document.getElementById("rangeMode").value = item.rangeMode || "1";
+  
+  // Handle datetime fields
+  if (item.start) {
+    const startDate = new Date(item.start);
+    document.getElementById("senderStart").value = formatDateTimeLocal(startDate);
+  }
+  if (item.end) {
+    const endDate = new Date(item.end);
+    document.getElementById("senderEnd").value = formatDateTimeLocal(endDate);
+  }
+  
+  // Show feedback
+  alert("History applied successfully!");
+}
+
+function applyDestinationHistory(id) {
+  const history = loadDestinationHistory();
+  const item = history.find(h => h.id === id);
+  
+  if (!item) return;
+  
+  // Fill form fields
+  document.getElementById("receiverEntityType").value = item.targetEntityType || "";
+  document.getElementById("receiverEntityId").value = item.targetEntityId || "";
+  document.getElementById("receiverScope").value = item.scope || "ANY";
+  
+  // Show feedback
+  alert("History applied successfully!");
+}
+
+function formatDateTimeLocal(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+}
+
+function formatTimestamp(timestamp) {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diff = now - date;
+  
+  // Less than 1 minute
+  if (diff < 60000) {
+    return "Just now";
+  }
+  // Less than 1 hour
+  if (diff < 3600000) {
+    const minutes = Math.floor(diff / 60000);
+    return `${minutes}m ago`;
+  }
+  // Less than 1 day
+  if (diff < 86400000) {
+    const hours = Math.floor(diff / 3600000);
+    return `${hours}h ago`;
+  }
+  // Less than 7 days
+  if (diff < 604800000) {
+    const days = Math.floor(diff / 86400000);
+    return `${days}d ago`;
+  }
+  // Show date
+  return date.toLocaleDateString();
+}
+
+function renderSourceHistory() {
+  const container = document.getElementById("sourceHistoryContainer");
+  if (!container) return;
+  
+  const history = loadSourceHistory();
+  
+  if (history.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-8 text-gray-400">
+        <span class="iconify text-4xl mb-2" data-icon="mdi:history"></span>
+        <p class="text-sm">No history yet</p>
+      </div>
+    `;
+    return;
+  }
+  
+  container.innerHTML = history.map(item => `
+    <div class="border border-gray-200 rounded-lg p-3 hover:border-blue-400 hover:shadow-md transition cursor-pointer group relative">
+      <div onclick="applySourceHistory(${item.id})" class="space-y-2">
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex-1 min-w-0">
+            <div class="font-medium text-sm text-gray-800 truncate">${item.entityType}</div>
+            <div class="text-xs text-gray-500 font-mono truncate">${item.entityId.substring(0, 20)}...</div>
+          </div>
+          <button 
+            onclick="event.stopPropagation(); if(confirm('Delete this history?')) deleteSourceHistory(${item.id})"
+            class="opacity-0 group-hover:opacity-100 transition p-1 hover:bg-red-50 rounded"
+            title="Delete"
+          >
+            <span class="iconify text-red-500" data-icon="mdi:delete"></span>
+          </button>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-gray-500">
+          <span class="iconify" data-icon="mdi:clock-outline"></span>
+          ${formatTimestamp(item.timestamp)}
+        </div>
+        <div class="text-xs text-gray-600">
+          <span class="font-medium">${item.keys.split(',').length}</span> keys, 
+          Limit: <span class="font-medium">${item.limit}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderDestinationHistory() {
+  const container = document.getElementById("destinationHistoryContainer");
+  if (!container) return;
+  
+  const history = loadDestinationHistory();
+  
+  if (history.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-8 text-gray-400">
+        <span class="iconify text-4xl mb-2" data-icon="mdi:history"></span>
+        <p class="text-sm">No history yet</p>
+      </div>
+    `;
+    return;
+  }
+  
+  container.innerHTML = history.map(item => `
+    <div class="border border-gray-200 rounded-lg p-3 hover:border-pink-400 hover:shadow-md transition cursor-pointer group relative">
+      <div onclick="applyDestinationHistory(${item.id})" class="space-y-2">
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex-1 min-w-0">
+            <div class="font-medium text-sm text-gray-800 truncate">${item.targetEntityType}</div>
+            <div class="text-xs text-gray-500 font-mono truncate">${item.targetEntityId.substring(0, 20)}...</div>
+          </div>
+          <button 
+            onclick="event.stopPropagation(); if(confirm('Delete this history?')) deleteDestinationHistory(${item.id})"
+            class="opacity-0 group-hover:opacity-100 transition p-1 hover:bg-red-50 rounded"
+            title="Delete"
+          >
+            <span class="iconify text-red-500" data-icon="mdi:delete"></span>
+          </button>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-gray-500">
+          <span class="iconify" data-icon="mdi:clock-outline"></span>
+          ${formatTimestamp(item.timestamp)}
+        </div>
+        <div class="text-xs text-gray-600">
+          Scope: <span class="font-medium">${item.scope}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Load history on page load
+if (document.getElementById("sourceHistoryContainer")) {
+  renderSourceHistory();
+}
+if (document.getElementById("destinationHistoryContainer")) {
+  renderDestinationHistory();
+}
+
+

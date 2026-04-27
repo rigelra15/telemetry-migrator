@@ -1,0 +1,411 @@
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Migration Process</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    <style>
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .animate-spin {
+        animation: spin 1s linear infinite;
+      }
+    </style>
+  </head>
+
+  <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div
+      class="max-w-4xl w-full mx-auto bg-white p-4 sm:p-6 rounded-2xl shadow-xl"
+    >
+      <!-- Steps Indicator -->
+      <div class="flex items-center justify-center mb-6 px-4">
+        <div class="flex items-center space-x-2">
+          <div class="flex items-center">
+            <div
+              class="w-8 h-8 rounded-full text-white flex items-center justify-center"
+              style="background-color: #e5005a"
+            >
+              <span class="iconify text-lg" data-icon="mdi:check"></span>
+            </div>
+            <span
+              class="ml-2 text-sm font-medium"
+              style="color: #e5005a"
+              data-i18n="navigation.step1"
+              >Login</span
+            >
+          </div>
+          <div class="w-8 h-0.5" style="background-color: #e5005a"></div>
+          <div class="flex items-center">
+            <div
+              class="w-8 h-8 rounded-full text-white flex items-center justify-center"
+              style="background-color: #e5005a"
+            >
+              <span class="iconify text-lg" data-icon="mdi:check"></span>
+            </div>
+            <span
+              class="ml-2 text-sm font-medium"
+              style="color: #e5005a"
+              data-i18n="navigation.step2"
+              >Source</span
+            >
+          </div>
+          <div class="w-8 h-0.5" style="background-color: #e5005a"></div>
+          <div class="flex items-center">
+            <div
+              class="w-8 h-8 rounded-full text-white flex items-center justify-center"
+              style="background-color: #e5005a"
+            >
+              <span class="iconify text-lg" data-icon="mdi:check"></span>
+            </div>
+            <span
+              class="ml-2 text-sm font-medium"
+              style="color: #e5005a"
+              data-i18n="navigation.step3"
+              >Destination</span
+            >
+          </div>
+          <div class="w-8 h-0.5" style="background-color: #e5005a"></div>
+          <div class="flex items-center">
+            <div
+              class="w-8 h-8 rounded-full text-white flex items-center justify-center text-sm font-bold"
+              style="background-color: #1e22aa"
+            >
+              4
+            </div>
+            <span
+              class="ml-2 text-sm font-medium"
+              style="color: #1e22aa"
+              data-i18n="navigation.step4"
+              >Migrate</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between mb-4">
+        <h2
+          class="text-lg font-bold flex items-center gap-2 justify-center"
+          style="color: #1e22aa"
+        >
+          <span class="iconify" data-icon="mdi:database-sync"></span>
+          <span data-i18n="migrate.title">Migration Process</span>
+        </h2>
+
+        <!-- Language Toggle Button -->
+        <button
+          type="button"
+          id="langToggleBtn"
+          onclick="toggleLanguage()"
+          class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700"
+          title="Switch Language"
+        >
+          <span
+            class="flag-icon iconify"
+            data-icon="emojione:flag-for-united-states"
+          ></span>
+          <span class="lang-text">EN</span>
+          <span class="iconify" data-icon="mdi:translate"></span>
+        </button>
+      </div>
+
+      <!-- Migration Summary -->
+      <div
+        id="migrationSummary"
+        class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200"
+      >
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-semibold text-gray-700 flex items-center gap-2">
+            <span class="iconify" data-icon="mdi:information"></span>
+            <span data-i18n="migrate.summary.title"
+              >Migration Configuration</span
+            >
+          </h3>
+          <button
+            id="settingsBtn"
+            onclick="openMigrationSettings()"
+            class="p-2 hover:bg-gray-200 rounded-lg transition flex items-center gap-1.5 text-xs text-gray-600"
+            title="Migration Settings"
+          >
+            <span class="iconify text-lg" data-icon="mdi:cog"></span>
+            <span data-i18n="migrate.summary.settings">Settings</span>
+          </button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+          <!-- Source Configuration -->
+          <div class="space-y-4">
+            <div
+              class="flex items-center gap-2 pb-2 border-b"
+              style="border-color: #1e22aa"
+            >
+              <span
+                class="iconify text-lg"
+                data-icon="mdi:database-export"
+                style="color: #1e22aa"
+              ></span>
+              <div
+                class="font-bold text-gray-800"
+                style="color: #1e22aa"
+                data-i18n="migrate.summary.sourceConfig"
+              >
+                Source Configuration
+              </div>
+            </div>
+            <div id="sourceUsername">Loading...</div>
+            <div id="sourceEntityNameContainer">
+              <div id="sourceEntityName">
+                <div>
+                  <div class="flex items-center gap-1.5 mb-1">
+                    <span
+                      class="iconify text-sm text-gray-600"
+                      data-icon="mdi:tag"
+                    ></span>
+                    <span
+                      class="text-xs text-gray-600 font-medium uppercase tracking-wide"
+                      >Entity Name</span
+                    >
+                  </div>
+                  <div class="border-t border-gray-300 pt-1.5">
+                    <span class="font-medium text-gray-800">-</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="text-gray-600" id="summarySource">Loading...</div>
+          </div>
+          <!-- Destination Configuration -->
+          <div class="space-y-4">
+            <div
+              class="flex items-center gap-2 pb-2 border-b"
+              style="border-color: #e5005a"
+            >
+              <span
+                class="iconify text-lg"
+                data-icon="mdi:database-import"
+                style="color: #e5005a"
+              ></span>
+              <div
+                class="font-bold text-gray-800"
+                style="color: #e5005a"
+                data-i18n="migrate.summary.destinationConfig"
+              >
+                Destination Configuration
+              </div>
+            </div>
+            <div id="destUsername">Loading...</div>
+            <div id="destEntityNameContainer">
+              <div id="destEntityName">
+                <div>
+                  <div class="flex items-center gap-1.5 mb-1">
+                    <span
+                      class="iconify text-sm text-gray-600"
+                      data-icon="mdi:tag"
+                    ></span>
+                    <span
+                      class="text-xs text-gray-600 font-medium uppercase tracking-wide"
+                      >Entity Name</span
+                    >
+                  </div>
+                  <div class="border-t border-gray-300 pt-1.5">
+                    <span class="font-medium text-gray-800">-</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="text-gray-600" id="summaryDestination">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Start Migration Button -->
+      <div id="startButtonContainer" class="flex gap-3">
+        <button
+          onclick="window.location.href = 'destination.html'"
+          class="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm hover:bg-gray-50 flex items-center justify-center gap-2"
+        >
+          <span class="iconify" data-icon="mdi:arrow-left-circle"></span>
+          <span data-i18n="migrate.buttons.previous">Previous</span>
+        </button>
+        <button
+          id="startMigrationBtn"
+          class="flex-1 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:opacity-90 transition-all"
+          style="background: linear-gradient(to right, #1e22aa, #e5005a)"
+        >
+          <span class="iconify text-xl" data-icon="mdi:play-circle"></span>
+          <span data-i18n="migrate.buttons.start">Start Migration</span>
+        </button>
+      </div>
+
+      <!-- Progress Section -->
+      <div id="progressSection" class="hidden space-y-4">
+        <!-- Progress Bar -->
+        <div class="bg-gray-200 rounded-full h-3 overflow-hidden">
+          <div
+            id="progressBar"
+            class="h-full rounded-full transition-all duration-300"
+            style="
+              width: 0%;
+              background: linear-gradient(to right, #1e22aa, #e5005a);
+            "
+          ></div>
+        </div>
+
+
+
+        <!-- Log View Toggle -->
+        <div
+          class="flex items-center justify-between border-b border-gray-300 pb-2 mb-2"
+        >
+          <div class="flex items-center gap-2">
+            <span
+              class="iconify text-gray-600"
+              data-icon="mdi:text-box-outline"
+            ></span>
+            <span class="text-sm font-medium text-gray-700">Log Display:</span>
+          </div>
+          <div
+            class="inline-flex rounded-lg border border-gray-300 overflow-hidden shadow-sm"
+          >
+            <button
+              id="formattedViewBtn"
+              onclick="window.toggleLogView?.('formatted')"
+              class="px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2"
+              style="
+                background: linear-gradient(to right, #1e22aa, #e5005a);
+                color: white;
+              "
+              title="Show clean, user-friendly view with icons and colored status"
+            >
+              <span class="iconify" data-icon="mdi:format-align-left"></span>
+              <span data-i18n="migrate.logView.formatted">Formatted View</span>
+            </button>
+            <button
+              id="rawViewBtn"
+              onclick="window.toggleLogView?.('raw')"
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors flex items-center gap-2"
+              title="Show technical log output with timestamps and raw data"
+            >
+              <span class="iconify" data-icon="mdi:code-braces"></span>
+              <span data-i18n="migrate.logView.raw">Raw Logs</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Status Box -->
+        <div
+          id="statusBox"
+          class="bg-white border border-gray-300 p-4 rounded-lg text-xs max-h-[50vh] overflow-auto shadow-inner"
+        >
+          <div id="logContent" class="space-y-1 text-gray-800"></div>
+        </div>
+      </div>
+
+      <!-- Navigation Buttons -->
+      <div id="navigationButtons" class="hidden mt-4 flex gap-3">
+        <button
+          onclick="window.location.href = 'index.html'"
+          class="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm hover:bg-gray-50 flex items-center justify-center gap-2"
+        >
+          <span class="iconify" data-icon="mdi:home"></span>
+          <span data-i18n="migrate.buttons.backToLogin">Back to Login</span>
+        </button>
+        <button
+          onclick="rerunMigration()"
+          class="hidden flex-1 text-white py-2 rounded-lg text-sm hover:opacity-80 flex items-center justify-center gap-2"
+          style="background: #EF4444"
+        >
+          <span class="iconify" data-icon="mdi:restart-alert"></span>
+          <span data-i18n="migrate.buttons.retryMigration">Retry Migration</span>
+        </button>
+        <button
+          onclick="startNewMigration()"
+          class="flex-1 border text-white py-2 rounded-lg text-sm hover:opacity-80 flex items-center justify-center gap-2"
+          style="background-color: #1e22aa"
+        >
+          <span class="iconify" data-icon="mdi:restart"></span>
+          <span data-i18n="migrate.buttons.newMigration">New Migration</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div
+      id="settingsModal"
+      class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      onclick="if (event.target === this) closeMigrationSettings();"
+    >
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="flex items-center justify-between p-4 border-b">
+          <h3 class="font-semibold text-gray-800 flex items-center gap-2">
+            <span class="iconify" data-icon="mdi:cog"></span>
+            <span data-i18n="migrate.summary.settings">Migration Settings</span>
+          </h3>
+          <button
+            onclick="closeMigrationSettings()"
+            class="p-1 hover:bg-gray-100 rounded transition"
+          >
+            <span
+              class="iconify text-xl text-gray-600"
+              data-icon="mdi:close"
+            ></span>
+          </button>
+        </div>
+        <div class="p-4 space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              <span
+                class="iconify inline-block"
+                data-icon="mdi:package-variant"
+              ></span>
+              <span data-i18n="migrate.settings.batchSize"
+                >Batch Size (POST)</span
+              >
+            </label>
+            <input
+              id="batchSizeInput"
+              type="number"
+              min="1"
+              max="2000"
+              value="100"
+              class="w-full border border-gray-300 p-2 rounded-lg text-sm"
+              placeholder="Number of records per POST request"
+            />
+            <p class="text-xs text-gray-500 mt-1">
+              How many records to send in each POST request. Default: 100
+            </p>
+          </div>
+        </div>
+        <div class="flex gap-3 p-4 border-t bg-gray-50">
+          <button
+            onclick="closeMigrationSettings()"
+            class="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm hover:bg-gray-50"
+          >
+            <span data-i18n="migrate.buttons.cancel">Cancel</span>
+          </button>
+          <button
+            onclick="saveMigrationSettings()"
+            class="flex-1 text-white py-2 rounded-lg text-sm hover:opacity-80"
+            style="background-color: #1e22aa"
+          >
+            <span data-i18n="migrate.buttons.save">Save Settings</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Load modular JS files -->
+    <script src="js/i18n.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/auth-handler.js"></script>
+    <script src="js/migrate.js"></script>
+  </body>
+</html>

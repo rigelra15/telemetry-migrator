@@ -1,0 +1,234 @@
+{
+  "navigation": {
+    "step1": "Login",
+    "step2": "Sumber",
+    "step3": "Tujuan",
+    "step4": "Migrasi"
+  },
+  "login": {
+    "title": "Alat Migrasi Telemetri",
+    "subtitle": "Login ke kedua akun untuk memulai migrasi",
+    "sourceAccount": "Akun Sumber",
+    "destinationAccount": "Akun Tujuan",
+    "fields": {
+      "username": "Nama Pengguna",
+      "password": "Kata Sandi",
+      "baseUrl": "URL Dasar",
+      "usernamePlaceholder": "Masukkan nama pengguna",
+      "passwordPlaceholder": "Masukkan kata sandi",
+      "baseUrlPlaceholder": "https://..."
+    },
+    "buttons": {
+      "loginSource": "Login Sumber",
+      "loginDestination": "Login Tujuan",
+      "changeAccount": "Ganti Akun",
+      "continue": "Lanjut ke Pengaturan Migrasi",
+      "login": "Login Kedua Sistem",
+      "loggingIn": "Sedang login..."
+    },
+    "status": {
+      "connected": "Terhubung",
+      "username": "Username:"
+    }
+  },
+  "source": {
+    "title": "Konfigurasi Sumber",
+    "subtitle": "Konfigurasi parameter sumber data dari ThingsBoard",
+    "requiredSection": "Field Wajib",
+    "optionalSection": "Parameter Opsional",
+    "buttons": {
+      "check": "Cek",
+      "select": "Pilih",
+      "next": "Lanjut: Tujuan",
+      "back": "Kembali ke Login",
+      "clear": "Bersihkan Form"
+    }
+  },
+  "destination": {
+    "title": "Konfigurasi Tujuan",
+    "subtitle": "Konfigurasi parameter tujuan target",
+    "historyModalTitle": "Detail Konfigurasi Tujuan",
+    "fields": {
+      "targetEntityType": "Tipe Entity Tujuan",
+      "targetEntityId": "ID Entity Tujuan",
+      "entityName": "Nama Entity",
+      "scope": "Scope",
+      "targetEntityTypePlaceholder": "Masukkan tipe entity tujuan (asset, device, dll.)",
+      "targetEntityIdPlaceholder": "Masukkan ID entity tujuan"
+    },
+    "tooltips": {
+      "targetEntityType": "Tipe entitas tujuan ThingsBoard (contoh: 'DEVICE', 'ASSET')",
+      "targetEntityId": "UUID unik entity tujuan (contoh: '784f394c-42b6-435a-983c-b7beff2784f9')",
+      "scope": "Nilai deprecated, hanya untuk kompatibilitas backward. Gunakan ANY untuk kompatibilitas"
+    },
+    "buttons": {
+      "check": "Cek",
+      "back": "Kembali ke Sumber",
+      "next": "Mulai Migrasi",
+      "previous": "Sebelumnya: Sumber",
+      "cancel": "Batal",
+      "applyConfig": "Terapkan Konfigurasi"
+    }
+  },
+  "migrate": {
+    "title": "Proses Migrasi",
+    "summary": {
+      "title": "Konfigurasi Migrasi",
+      "settings": "Pengaturan",
+      "sourceConfig": "Konfigurasi Sumber",
+      "destinationConfig": "Konfigurasi Tujuan",
+      "entityName": "Nama Entity",
+      "keys": "Keys",
+      "dateRange": "Rentang Tanggal",
+      "totalDays": "Total Hari"
+    },
+    "settings": {
+      "batchSize": "Ukuran Batch (POST)"
+    },
+    "progress": {
+      "title": "Progres Migrasi",
+      "currentDay": "Hari Saat Ini",
+      "status": "Status",
+      "dataPoints": "Titik Data",
+      "startTime": "Waktu Mulai",
+      "elapsed": "Waktu Berlalu",
+      "elapsedTime": "Waktu Berjalan:",
+      "estimatedRemaining": "Estimasi Tersisa",
+      "estimatedTime": "Estimasi Waktu Tersisa:"
+    },
+    "status": {
+      "pending": "Menunggu",
+      "running": "Berjalan",
+      "success": "Berhasil",
+      "error": "Error"
+    },
+    "logView": {
+      "raw": "Log Mentah",
+      "formatted": "Tampilan Rapi",
+      "rawTooltip": "Tampilkan output log teknis dengan timestamp dan data mentah",
+      "formattedTooltip": "Tampilkan tampilan yang rapi dan mudah dipahami dengan ikon dan warna status"
+    },
+    "buttons": {
+      "start": "Mulai Migrasi",
+      "previous": "Sebelumnya: Tujuan",
+      "cancel": "Batal",
+      "retry": "Coba Lagi",
+      "viewDetails": "Lihat Detail",
+      "back": "Kembali ke Tujuan",
+      "backToLogin": "Kembali ke Login",
+      "migrateAgain": "Migrasi Lagi",
+      "retryMigration": "Migrasi Ulang",
+      "newMigration": "Migrasi Baru",
+      "save": "Simpan Pengaturan"
+    },
+    "messages": {
+      "starting": "Memulai migrasi...",
+      "completed": "Migrasi berhasil diselesaikan!",
+      "failed": "Migrasi gagal",
+      "cancelled": "Migrasi dibatalkan"
+    }
+  },
+  "fields": {
+    "entityType": {
+      "label": "Tipe Entity",
+      "placeholder": "contoh: DEVICE, ASSET",
+      "tooltip": "Tipe entitas ThingsBoard (DEVICE, ASSET, dll)"
+    },
+    "entityId": {
+      "label": "ID Entity",
+      "placeholder": "Masukkan ID entity",
+      "tooltip": "UUID unik dari entity yang akan diambil datanya"
+    },
+    "entityName": {
+      "label": "Nama Entity",
+      "tooltip": "Nama entity (informasi saja, diambil otomatis setelah 1.5 detik)"
+    },
+    "keys": {
+      "label": "Keys",
+      "placeholder": "Keys telemetri dipisah koma",
+      "tooltip": "Daftar telemetry keys yang akan diambil (pisahkan dengan koma)"
+    },
+    "startTimestamp": {
+      "label": "Timestamp Awal",
+      "utc": "(WIB)",
+      "tooltip": "Waktu mulai pengambilan data telemetry (WIB timezone)"
+    },
+    "endTimestamp": {
+      "label": "Timestamp Akhir",
+      "utc": "(WIB)",
+      "tooltip": "Waktu akhir pengambilan data telemetry (WIB timezone)"
+    },
+    "intervalType": {
+      "label": "Tipe Interval",
+      "placeholder": "-- Pilih Tipe Interval --",
+      "tooltip": "Tipe interval untuk aggregasi data (WEEK, MONTH, QUARTER, dll)",
+      "options": {
+        "milliseconds": "Milidetik",
+        "week": "Minggu",
+        "weekIso": "Minggu (ISO)",
+        "month": "Bulan",
+        "quarter": "Kuartal"
+      }
+    },
+    "interval": {
+      "label": "Interval",
+      "note": "(milidetik, default: 0)",
+      "placeholder": "0",
+      "tooltip": "Durasi interval dalam milliseconds (contoh: 3600000 = 1 jam)"
+    },
+    "timeZone": {
+      "label": "Zona Waktu",
+      "note": "(untuk WEEK/MONTH/QUARTER)",
+      "placeholder": "contoh: Asia/Jakarta, UTC",
+      "tooltip": "Timezone untuk kalkulasi interval (contoh: Asia/Jakarta, UTC)"
+    },
+    "limit": {
+      "label": "Limit",
+      "note": "(maks record, default: 100)",
+      "placeholder": "100",
+      "tooltip": "Maximum jumlah data points per request (default: 100, max: 50000)"
+    },
+    "aggregation": {
+      "label": "Fungsi Agregasi",
+      "placeholder": "-- Pilih Agregasi --",
+      "tooltip": "Fungsi aggregasi data dalam interval (MIN, MAX, AVG, SUM, COUNT)",
+      "options": {
+        "none": "Tidak Ada",
+        "min": "Minimum",
+        "max": "Maksimum",
+        "avg": "Rata-rata",
+        "sum": "Jumlah",
+        "count": "Hitung"
+      }
+    },
+    "orderBy": {
+      "label": "Urutkan Berdasarkan",
+      "placeholder": "-- Default (ASC) --",
+      "tooltip": "Urutan sorting data berdasarkan timestamp (ASC dari lama ke baru, DESC dari baru ke lama)",
+      "options": {
+        "asc": "Naik (Ascending)",
+        "desc": "Turun (Descending)"
+      }
+    },
+    "useStrictDataTypes": {
+      "label": "Gunakan Tipe Data Ketat",
+      "note": "(nonaktifkan konversi string)",
+      "tooltip": "Preserve tipe data original tanpa konversi ke string (number tetap number)"
+    },
+    "rangeMode": {
+      "label": "Mode Rentang",
+      "tooltip": "Cara pembagian range waktu untuk fetch data (1 Day = fetch per hari)",
+      "options": {
+        "oneDay": "1 Hari per Request"
+      }
+    }
+  },
+  "messages": {
+    "entityNotFound": "Entity tidak ditemukan",
+    "errorChecking": "Error saat memeriksa entity",
+    "checking": "Memeriksa...",
+    "autoChecking": "Memeriksa otomatis...",
+    "loading": "Memuat...",
+    "required": "Field ini wajib diisi"
+  }
+}

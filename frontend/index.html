@@ -1,0 +1,222 @@
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Migration Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    <style>
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      .animate-spin {
+        animation: spin 1s linear infinite;
+      }
+    </style>
+  </head>
+
+  <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-5xl bg-white p-4 sm:p-6 rounded-2xl shadow-xl">
+      <!-- Language Toggle Button (Top Right) -->
+      <div class="flex justify-end mb-2">
+        <button
+          type="button"
+          id="langToggleBtn"
+          onclick="toggleLanguage()"
+          class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700"
+          title="Switch Language"
+        >
+          <span class="flag-icon iconify" data-icon="emojione:flag-for-united-states"></span>
+          <span class="lang-text">EN</span>
+          <span class="iconify" data-icon="mdi:translate"></span>
+        </button>
+      </div>
+      
+      <!-- Steps Indicator -->
+      <div class="flex items-center justify-center mb-6 px-4">
+        <div class="flex items-center space-x-2">
+          <div class="flex items-center">
+            <div class="w-8 h-8 rounded-full text-white flex items-center justify-center text-sm font-bold" style="background-color: #1E22AA;">
+              1
+            </div>
+            <span class="ml-2 text-sm font-medium" style="color: #1E22AA;" data-i18n="navigation.step1">Login</span>
+          </div>
+          <div class="w-8 h-0.5 bg-gray-300"></div>
+          <div class="flex items-center">
+            <div class="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-bold">
+              2
+            </div>
+            <span class="ml-2 text-sm font-medium text-gray-500" data-i18n="navigation.step2">Source</span>
+          </div>
+          <div class="w-8 h-0.5 bg-gray-300"></div>
+          <div class="flex items-center">
+            <div class="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-bold">
+              3
+            </div>
+            <span class="ml-2 text-sm font-medium text-gray-500" data-i18n="navigation.step3">Destination</span>
+          </div>
+          <div class="w-8 h-0.5 bg-gray-300"></div>
+          <div class="flex items-center">
+            <div class="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-bold">
+              4
+            </div>
+            <span class="ml-2 text-sm font-medium text-gray-500" data-i18n="navigation.step4">Migrate</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center mb-6">
+        <span class="iconify inline-block text-5xl text-blue-600 mb-2" data-icon="mdi:database-sync"></span>
+        <h2 class="text-lg sm:text-xl font-bold" data-i18n="login.title">
+          Telemetry Migration Tool
+        </h2>
+        <p class="text-xs text-gray-500 mt-1" data-i18n="login.subtitle">Login to both systems to begin migration</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Source Login Container -->
+        <div class="border p-4 rounded-xl">
+          <h3 class="font-semibold flex items-center gap-2 mb-3" style="color: #1E22AA;">
+            <span class="iconify" data-icon="mdi:database-export"></span>
+            <span data-i18n="login.sourceAccount">Source Account</span>
+          </h3>
+
+          <!-- Source Login Form -->
+          <form id="sourceLogin" class="space-y-3">
+
+          <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1" data-i18n="login.fields.username">Username</label>
+            <input
+              id="sourceUsername"
+              class="w-full border p-2 rounded-lg text-sm"
+              data-i18n-placeholder="login.fields.usernamePlaceholder"
+              placeholder="Enter username"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1" data-i18n="login.fields.password">Password</label>
+            <input
+              id="sourcePassword"
+              type="password"
+              class="w-full border p-2 rounded-lg text-sm"
+              data-i18n-placeholder="login.fields.passwordPlaceholder"
+              placeholder="Enter password"
+              required
+            />
+          </div>
+
+            <button type="submit" class="w-full text-white py-2 rounded-lg text-sm flex items-center justify-center gap-2" style="background-color: #1E22AA;">
+              <span class="iconify" data-icon="mdi:login"></span>
+              <span data-i18n="login.buttons.loginSource">Login Source</span>
+            </button>
+
+            <p id="sourceMsg" class="text-xs"></p>
+          </form>
+
+          <!-- Source Logged In State (Hidden by default) -->
+          <div id="sourceLoggedIn" class="hidden">
+            <div class="rounded-lg p-4" style="background-color: #F0F0FF; border: 1px solid #1E22AA;">
+              <div class="flex items-center gap-2 mb-3" style="color: #1E22AA;">
+                <span class="iconify text-xl" data-icon="mdi:check-circle"></span>
+                <span class="font-semibold" data-i18n="login.status.connected">Connected</span>
+              </div>
+              <div class="space-y-1 text-sm">
+                <div class="flex items-center gap-2 text-gray-700">
+                  <span class="iconify" data-icon="mdi:account"></span>
+                  <span class="font-medium" data-i18n="login.status.username">Username:</span>
+                  <span id="sourceUsernameDisplay" class="text-gray-900"></span>
+                </div>
+              </div>
+              <button onclick="changeSourceAccount()" class="mt-3 w-full bg-white py-2 rounded-lg text-sm flex items-center justify-center gap-2 hover:opacity-80" style="border: 1px solid #1E22AA; color: #1E22AA;">
+                <span class="iconify" data-icon="mdi:account-switch"></span>
+                <span data-i18n="login.buttons.changeAccount">Change Account</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Destination Login Container -->
+        <div class="border p-4 rounded-xl">
+          <h3 class="font-semibold flex items-center gap-2 mb-3" style="color: #E5005A;">
+            <span class="iconify" data-icon="mdi:database-import"></span>
+            <span data-i18n="login.destinationAccount">Destination Account</span>
+          </h3>
+
+          <!-- Destination Login Form -->
+          <form id="destLogin" class="space-y-3">
+
+          <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1" data-i18n="login.fields.username">Username</label>
+            <input
+              id="destUsername"
+              class="w-full border p-2 rounded-lg text-sm"
+              data-i18n-placeholder="login.fields.usernamePlaceholder"
+              placeholder="Enter username"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1" data-i18n="login.fields.password">Password</label>
+            <input
+              id="destPassword"
+              type="password"
+              class="w-full border p-2 rounded-lg text-sm"
+              data-i18n-placeholder="login.fields.passwordPlaceholder"
+              placeholder="Enter password"
+              required
+            />
+          </div>
+
+            <button type="submit" class="w-full text-white py-2 rounded-lg text-sm flex items-center justify-center gap-2" style="background-color: #E5005A;">
+              <span class="iconify" data-icon="mdi:login"></span>
+              <span data-i18n="login.buttons.loginDestination">Login Destination</span>
+            </button>
+
+            <p id="destMsg" class="text-xs"></p>
+          </form>
+
+          <!-- Destination Logged In State (Hidden by default) -->
+          <div id="destLoggedIn" class="hidden">
+            <div class="rounded-lg p-4" style="background-color: #FFF0F7; border: 1px solid #E5005A;">
+              <div class="flex items-center gap-2 mb-3" style="color: #E5005A;">
+                <span class="iconify text-xl" data-icon="mdi:check-circle"></span>
+                <span class="font-semibold" data-i18n="login.status.connected">Connected</span>
+              </div>
+              <div class="space-y-1 text-sm">
+                <div class="flex items-center gap-2 text-gray-700">
+                  <span class="iconify" data-icon="mdi:account"></span>
+                  <span class="font-medium" data-i18n="login.status.username">Username:</span>
+                  <span id="destUsernameDisplay" class="text-gray-900"></span>
+                </div>
+              </div>
+              <button onclick="changeDestAccount()" class="mt-3 w-full bg-white py-2 rounded-lg text-sm flex items-center justify-center gap-2 hover:opacity-80" style="border: 1px solid #E5005A; color: #E5005A;">
+                <span class="iconify" data-icon="mdi:account-switch"></span>
+                <span data-i18n="login.buttons.changeAccount">Change Account</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Next Button (Hidden until both logged in) -->
+      <div id="nextButtonContainer" class="hidden mt-6 flex justify-center">
+        <button onclick="goToSourcePage()" class="text-white px-8 py-3 rounded-lg font-semibold flex items-center gap-2 hover:shadow-lg transform hover:scale-105 transition" style="background: linear-gradient(to right, #1E22AA, #E5005A);">
+          <span data-i18n="login.buttons.continue">Continue to Migration Setup</span>
+          <span class="iconify text-xl" data-icon="mdi:arrow-right-circle"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Load modular JS files -->
+    <script src="js/i18n.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/auth.js"></script>
+  </body>
+</html>
