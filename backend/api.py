@@ -228,7 +228,7 @@ async def refresh_access_token(source: str) -> Optional[str]:
             return None
         
         # Call ThingsBoard refresh token endpoint
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=30.0, verify=False) as client:
             response = await client.post(
                 f"{BASE_URL}/api/auth/token",
                 json={"refreshToken": refresh_token}
@@ -253,7 +253,7 @@ async def refresh_access_token(source: str) -> Optional[str]:
 
 async def login_to_thingsboard(base_url: str, username: str, password: str) -> dict:
     """Login to ThingsBoard and return token + refreshToken"""
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=30.0, verify=False) as client:
         response = await client.post(
             f"{base_url}/api/auth/login",
             json={"username": username, "password": password}
@@ -432,7 +432,7 @@ async def get_keys(entityType: str, entityId: str):
         url = f"{BASE_URL}/api/plugins/telemetry/{entityType}/{entityId}/keys/timeseries"
         headers = {"X-Authorization": f"Bearer {source_token}"}
         
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(verify=False) as client:
             response = await client.get(url, headers=headers)
             
             if response.status_code == 401:
@@ -615,7 +615,7 @@ async def run_migration(params: MigrationRequest):
         log_with_timestamp("-"*60)
         
         # Fetch entity names
-        async with httpx.AsyncClient(timeout=30.0) as temp_client:
+        async with httpx.AsyncClient(timeout=30.0, verify=False) as temp_client:
             try:
                 source_entity_info = await get_entity_info(params.entityType, params.entityId, source_token, BASE_URL)
                 source_entity_name = source_entity_info.get("name", params.entityId[:8] + "...")
@@ -654,7 +654,7 @@ async def run_migration(params: MigrationRequest):
         total_records_fetched = 0
         total_records_posted = 0
         
-        async with httpx.AsyncClient(timeout=60.0) as client:
+        async with httpx.AsyncClient(timeout=60.0, verify=False) as client:
             while current_day_start < end:
                 day_count += 1
                 day_end = min(current_day_start + ONE_DAY, end)
