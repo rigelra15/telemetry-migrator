@@ -1,6 +1,6 @@
 {
   "name": "telemetry-migrator",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Tool untuk migrasi data telemetri antar sistem ThingsBoard",
   "main": "main.js",
   "scripts": {
@@ -12,7 +12,6 @@
     "release": "npm version patch -m \"Release %s\" && git push origin main --follow-tags"
   },
   "keywords": [],
-
   "author": "",
   "license": "ISC",
   "build": {
