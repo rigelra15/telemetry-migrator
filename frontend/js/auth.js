@@ -36,7 +36,12 @@ function initLoginPage() {
           await checkLoginStatus();
         }
       } catch (error) {
-        document.getElementById("sourceMsg").innerHTML = '<span class="iconify text-red-600" data-icon="mdi:close-circle"></span> Login Failed';
+        document.getElementById("sourceMsg").innerHTML = `
+          <div class="flex items-start gap-2 text-red-700 bg-red-50 p-2.5 rounded-lg border border-red-200 mt-2">
+            <span class="iconify text-lg shrink-0 mt-0.5" data-icon="mdi:close-circle"></span>
+            <span class="font-medium text-xs leading-relaxed">Login Failed. Please check your username and password, or try again later.</span>
+          </div>
+        `;
         console.error(error);
       }
     });
@@ -66,7 +71,12 @@ function initLoginPage() {
           await checkLoginStatus();
         }
       } catch (error) {
-        document.getElementById("destMsg").innerHTML = '<span class="iconify text-red-600" data-icon="mdi:close-circle"></span> Login Failed';
+        document.getElementById("destMsg").innerHTML = `
+          <div class="flex items-start gap-2 text-red-700 bg-red-50 p-2.5 rounded-lg border border-red-200 mt-2">
+            <span class="iconify text-lg shrink-0 mt-0.5" data-icon="mdi:close-circle"></span>
+            <span class="font-medium text-xs leading-relaxed">Login Failed. Please check your username and password, or try again later.</span>
+          </div>
+        `;
         console.error(error);
       }
     });
