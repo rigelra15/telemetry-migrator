@@ -36,13 +36,14 @@ function initLoginPage() {
           await checkLoginStatus();
         }
       } catch (error) {
+        const detail = error.response?.data?.detail || 'Unknown error. Please try again later.';
         document.getElementById("sourceMsg").innerHTML = `
           <div class="flex items-start gap-2 text-red-700 bg-red-50 p-2.5 rounded-lg border border-red-200 mt-2">
             <span class="iconify text-lg shrink-0 mt-0.5" data-icon="mdi:close-circle"></span>
-            <span class="font-medium text-xs leading-relaxed">Login Failed. Please check your username and password, or try again later.</span>
+            <span class="font-medium text-xs leading-relaxed">${detail}</span>
           </div>
         `;
-        console.error(error);
+        console.error('Source login error:', detail, error);
       }
     });
 
@@ -71,13 +72,14 @@ function initLoginPage() {
           await checkLoginStatus();
         }
       } catch (error) {
+        const detail = error.response?.data?.detail || 'Unknown error. Please try again later.';
         document.getElementById("destMsg").innerHTML = `
           <div class="flex items-start gap-2 text-red-700 bg-red-50 p-2.5 rounded-lg border border-red-200 mt-2">
             <span class="iconify text-lg shrink-0 mt-0.5" data-icon="mdi:close-circle"></span>
-            <span class="font-medium text-xs leading-relaxed">Login Failed. Please check your username and password, or try again later.</span>
+            <span class="font-medium text-xs leading-relaxed">${detail}</span>
           </div>
         `;
-        console.error(error);
+        console.error('Dest login error:', detail, error);
       }
     });
   }

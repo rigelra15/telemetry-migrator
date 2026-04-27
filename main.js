@@ -75,8 +75,12 @@ function startPythonBackend() {
   console.log(`Frontend Dir: ${frontendDir}`);
   console.log(`BASE_URL: ${baseUrl}`);
 
+  const isWindowsPlatform = os.platform() === 'win32';
+
   pyProcess = spawn(backendBin, args, {
     cwd: dataDir,
+    detached: !isWindowsPlatform, // Unix: detach to create process group for clean kill
+    stdio: ['ignore', 'pipe', 'pipe'],
     env: {
       ...process.env,
       PYTHONUNBUFFERED: '1',
@@ -291,17 +295,42 @@ app.whenReady().then(async () => {
   });
 });
 
-app.on('window-all-closed', () => {
-  if (pyProcess) {
-    pyProcess.kill();
+/**
+ * Properly kill backend process (cross-platform)
+ * On Windows, pyProcess.kill() doesn't reliably terminate .exe processes.
+ * We use taskkill /T /F to kill the entire process tree.
+ */
+function killBackend() {
+  if (!pyProcess) return;
+
+  try {
+    if (os.platform() === 'win32') {
+      // Windows: use taskkill to kill the process tree
+      const { execSync } = require('child_process');
+      execSync(`taskkill /pid ${pyProcess.pid} /T /F`, { stdio: 'ignore' });
+    } else {
+      // macOS/Linux: kill process group
+      process.kill(-pyProcess.pid, 'SIGTERM');
+    }
+  } catch (e) {
+    // Fallback: try standard kill
+    try { pyProcess.kill('SIGKILL'); } catch (_) {}
   }
+
+  pyProcess = null;
+}
+
+app.on('window-all-closed', () => {
+  killBackend();
   if (process.platform !== 'darwin') {
     app.quit();
   }
 });
 
 app.on('will-quit', () => {
-  if (pyProcess) {
-    pyProcess.kill();
-  }
+  killBackend();
+});
+
+app.on('before-quit', () => {
+  killBackend();
 });
