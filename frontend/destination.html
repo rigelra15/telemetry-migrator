@@ -1,0 +1,296 @@
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Destination Configuration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    <style>
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      .animate-spin {
+        animation: spin 1s linear infinite;
+      }
+      
+      /* Tooltip Styles */
+      .tooltip-wrapper {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        cursor: help;
+      }
+      
+      .tooltip-icon {
+        color: #9CA3AF;
+        font-size: 14px;
+        transition: color 0.2s;
+      }
+      
+      .tooltip-wrapper:hover .tooltip-icon {
+        color: #E5005A;
+      }
+      
+      .tooltip-text {
+        visibility: hidden;
+        position: absolute;
+        bottom: calc(100% + 10px);
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1F2937;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        line-height: 1.4;
+        white-space: normal;
+        max-width: 280px;
+        width: max-content;
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out, visibility 0.2s;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        pointer-events: none;
+      }
+      
+      .tooltip-wrapper:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+      }
+      
+      /* Tooltip Arrow */
+      .tooltip-text::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 5px solid transparent;
+        border-top-color: #1F2937;
+      }
+    </style>
+  </head>
+
+  <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-6xl w-full mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <!-- Main Form -->
+      <div class="lg:col-span-2 bg-white p-4 sm:p-6 rounded-2xl shadow-xl">
+        <!-- Steps Indicator -->
+        <div class="flex items-center justify-center mb-6 px-4">
+          <div class="flex items-center space-x-2">
+            <div class="flex items-center">
+              <div class="w-8 h-8 rounded-full text-white flex items-center justify-center" style="background-color: #E5005A;">
+                <span class="iconify text-lg" data-icon="mdi:check"></span>
+              </div>
+              <span class="ml-2 text-sm font-medium" style="color: #E5005A;" data-i18n="navigation.step1">Login</span>
+            </div>
+            <div class="w-8 h-0.5" style="background-color: #E5005A;"></div>
+            <div class="flex items-center">
+              <div class="w-8 h-8 rounded-full text-white flex items-center justify-center" style="background-color: #E5005A;">
+                <span class="iconify text-lg" data-icon="mdi:check"></span>
+              </div>
+              <span class="ml-2 text-sm font-medium" style="color: #E5005A;" data-i18n="navigation.step2">Source</span>
+            </div>
+            <div class="w-8 h-0.5" style="background-color: #E5005A;"></div>
+            <div class="flex items-center">
+              <div class="w-8 h-8 rounded-full text-white flex items-center justify-center text-sm font-bold" style="background-color: #1E22AA;">
+                3
+              </div>
+              <span class="ml-2 text-sm font-medium" style="color: #1E22AA;" data-i18n="navigation.step3">Destination</span>
+            </div>
+            <div class="w-8 h-0.5 bg-gray-300"></div>
+            <div class="flex items-center">
+              <div class="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-bold">
+                4
+              </div>
+              <span class="ml-2 text-sm font-medium text-gray-500" data-i18n="navigation.step4">Migrate</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold flex items-center gap-2" style="color: #E5005A;">
+            <span class="iconify" data-icon="mdi:database-import"></span>
+            <span data-i18n="destination.title">Destination - Target Configuration</span>
+          </h2>
+          
+          <!-- Language Toggle Button -->
+          <button
+            type="button"
+            id="langToggleBtn"
+            onclick="toggleLanguage()"
+            class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700"
+            title="Switch Language"
+          >
+            <span class="flag-icon iconify" data-icon="emojione:flag-for-united-states"></span>
+            <span class="lang-text">EN</span>
+            <span class="iconify" data-icon="mdi:translate"></span>
+          </button>
+        </div>
+
+      <form id="receiverForm" class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+            <span data-i18n="destination.fields.targetEntityType">Target Entity Type</span>
+            <span class="tooltip-wrapper" data-i18n-tooltip="destination.tooltips.targetEntityType">
+              <span class="tooltip-icon iconify" data-icon="mdi:information-outline"></span>
+              <span class="tooltip-text">A string value representing the entity type. For example, 'DEVICE'</span>
+            </span>
+          </label>
+          <input
+            id="receiverEntityType"
+            class="w-full border p-2 rounded-lg text-sm uppercase"
+            data-i18n-placeholder="destination.fields.targetEntityTypePlaceholder"
+            placeholder="Enter target entity type (asset, device, etc.)"
+            oninput="safeToggleCheckDestButton(); safeHandleDestEntityIdInput();"
+            required
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+            <span data-i18n="destination.fields.targetEntityId">Target Entity ID</span>
+            <span class="tooltip-wrapper" data-i18n-tooltip="destination.tooltips.targetEntityId">
+              <span class="tooltip-icon iconify" data-icon="mdi:information-outline"></span>
+              <span class="tooltip-text">A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'</span>
+            </span>
+          </label>
+          <div class="flex gap-2">
+            <input
+              id="receiverEntityId"
+              class="flex-1 border p-2 rounded-lg text-sm"
+              data-i18n-placeholder="destination.fields.targetEntityIdPlaceholder"
+              placeholder="Enter target entity ID"
+              oninput="safeToggleCheckDestButton(); safeHandleDestEntityIdInput();"
+              required
+            />
+            <button
+              type="button"
+              id="checkDestEntityBtn"
+              onclick="checkDestEntityName()"
+              disabled
+              class="px-4 py-2 border rounded-lg text-sm font-medium flex items-center gap-2 whitespace-nowrap transition-all hover:bg-pink-50 disabled:bg-gray-100 disabled:border-gray-300 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-gray-100"
+              style="color: #E5005A; border-color: #E5005A;"
+            >
+              <span class="iconify" data-icon="mdi:check-circle"></span>
+              <span data-i18n="destination.buttons.check">Check</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="destEntityNameContainer">
+          <label class="block text-xs font-medium text-gray-700 mb-1" data-i18n="destination.fields.entityName">Entity Name</label>
+          <div class="w-full border p-2 rounded-lg text-sm bg-gray-50 text-gray-700" id="destEntityNameDisplay">
+            -
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+            <span data-i18n="destination.fields.scope">Scope</span>
+            <span class="tooltip-wrapper" data-i18n-tooltip="destination.tooltips.scope">
+              <span class="tooltip-icon iconify" data-icon="mdi:information-outline"></span>
+              <span class="tooltip-text">Value is deprecated, reserved for backward compatibility and not used in the API call implementation. Specify any scope for compatibility</span>
+            </span>
+          </label>
+          <input
+            id="receiverScope"
+            value="ANY"
+            class="w-full border p-2 rounded-lg text-sm bg-gray-100"
+            readonly
+          />
+        </div>
+
+        <div class="flex gap-3 pt-2">
+          <button
+            type="button"
+            onclick="window.location.href='source.html'"
+            class="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm hover:bg-gray-50 flex items-center justify-center gap-2"
+          >
+            <span class="iconify" data-icon="mdi:arrow-left-circle"></span>
+            <span data-i18n="destination.buttons.previous">Previous</span>
+          </button>
+          <button
+            type="submit"
+            class="flex-1 text-white py-2 rounded-lg text-sm flex items-center justify-center gap-2"
+            style="background-color: #E5005A;"
+          >
+            <span class="iconify" data-icon="mdi:arrow-right-circle"></span>
+            <span data-i18n="destination.buttons.next">Next</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- History Sidebar -->
+    <div class="bg-white p-4 rounded-2xl shadow-xl lg:sticky lg:top-4 self-start">
+      <h3 class="font-bold text-sm mb-3 flex items-center gap-2" style="color: #E5005A;">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        Recent Configurations
+      </h3>
+      <div id="destinationHistoryContainer" class="space-y-2 overflow-y-auto" style="max-height: calc(100vh - 20rem);">
+        <!-- History items will be populated by JavaScript -->
+      </div>
+    </div>
+  </div>
+
+    <!-- Destination History Detail Modal -->
+    <div id="destHistoryModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onclick="if(event.target === this) closeDestinationHistoryModal()">
+      <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full mx-4">
+        <div class="flex items-center justify-between p-4 border-b">
+          <h3 class="font-bold text-gray-800 flex items-center gap-2">
+            <span class="iconify" data-icon="mdi:file-document-outline" style="color: #E5005A;"></span>
+            <span data-i18n="destination.historyModalTitle">Destination Configuration Details</span>
+          </h3>
+          <button onclick="closeDestinationHistoryModal()" class="p-1 hover:bg-gray-100 rounded transition">
+            <span class="iconify text-xl text-gray-600" data-icon="mdi:close"></span>
+          </button>
+        </div>
+        <div class="p-4 max-h-[60vh] overflow-y-auto">
+          <div id="destHistoryModalContent"></div>
+        </div>
+        <div class="flex gap-3 p-4 border-t bg-gray-50">
+          <button onclick="closeDestinationHistoryModal()" class="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm hover:bg-gray-50 font-medium">
+            <span data-i18n="destination.buttons.cancel">Cancel</span>
+          </button>
+          <button onclick="applyDestinationHistoryFromModal()" class="flex-1 text-white py-2 rounded-lg text-sm font-medium hover:opacity-90" style="background-color: #E5005A;">
+            <span data-i18n="destination.buttons.applyConfig">Apply Config</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Load modular JS files -->
+    <script src="js/i18n.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/auth-handler.js"></script>
+    <script src="js/destination.js"></script>
+    <script src="js/history.js"></script>    
+    <!-- Initialize inline event handlers after scripts loaded -->
+    <script>
+      // Safe wrapper functions for inline event handlers
+      function safeToggleCheckDestButton() {
+        if (typeof window.toggleCheckDestButton === 'function') {
+          window.toggleCheckDestButton();
+        }
+      }
+      
+      function safeHandleDestEntityIdInput() {
+        console.log('safeHandleDestEntityIdInput wrapper called');
+        console.log('window.handleDestEntityIdInput exists:', typeof window.handleDestEntityIdInput);
+        if (typeof window.handleDestEntityIdInput === 'function') {
+          window.handleDestEntityIdInput();
+        } else {
+          console.error('window.handleDestEntityIdInput is not a function!');
+        }
+      }
+    </script>
+  </body>
+</html>

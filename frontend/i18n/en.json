@@ -1,0 +1,234 @@
+{
+  "navigation": {
+    "step1": "Login",
+    "step2": "Source",
+    "step3": "Destination",
+    "step4": "Migrate"
+  },
+  "login": {
+    "title": "Telemetry Migration Tool",
+    "subtitle": "Login to both accounts to start migration",
+    "sourceAccount": "Source Account",
+    "destinationAccount": "Destination Account",
+    "fields": {
+      "username": "Username",
+      "password": "Password",
+      "baseUrl": "Base URL",
+      "usernamePlaceholder": "Enter username",
+      "passwordPlaceholder": "Enter password",
+      "baseUrlPlaceholder": "https://..."
+    },
+    "buttons": {
+      "loginSource": "Login Source",
+      "loginDestination": "Login Destination",
+      "changeAccount": "Change Account",
+      "continue": "Continue to Migration Setup",
+      "login": "Login Both Systems",
+      "loggingIn": "Logging in..."
+    },
+    "status": {
+      "connected": "Connected",
+      "username": "Username:"
+    }
+  },
+  "source": {
+    "title": "Source Configuration",
+    "subtitle": "Configure data source parameters from ThingsBoard",
+    "requiredSection": "Required Fields",
+    "optionalSection": "Optional Parameters",
+    "buttons": {
+      "check": "Check",
+      "select": "Select",
+      "next": "Next: Destination",
+      "back": "Back to Login",
+      "clear": "Clear Form"
+    }
+  },
+  "destination": {
+    "title": "Destination Configuration",
+    "subtitle": "Configure target destination parameters",
+    "historyModalTitle": "Destination Configuration Details",
+    "fields": {
+      "targetEntityType": "Target Entity Type",
+      "targetEntityId": "Target Entity ID",
+      "entityName": "Entity Name",
+      "scope": "Scope",
+      "targetEntityTypePlaceholder": "Enter target entity type (asset, device, etc.)",
+      "targetEntityIdPlaceholder": "Enter target entity ID"
+    },
+    "tooltips": {
+      "targetEntityType": "A string value representing the entity type. For example, 'DEVICE'",
+      "targetEntityId": "A string value representing the entity id. For example, '784f394c-42b6-435a-983c-b7beff2784f9'",
+      "scope": "Value is deprecated, reserved for backward compatibility and not used in the API call implementation. Specify any scope for compatibility"
+    },
+    "buttons": {
+      "check": "Check",
+      "back": "Back to Source",
+      "next": "Start Migration",
+      "previous": "Previous: Source",
+      "cancel": "Cancel",
+      "applyConfig": "Apply Config"
+    }
+  },
+  "migrate": {
+    "title": "Migration Process",
+    "summary": {
+      "title": "Migration Configuration",
+      "settings": "Settings",
+      "sourceConfig": "Source Configuration",
+      "destinationConfig": "Destination Configuration",
+      "entityName": "Entity Name",
+      "keys": "Keys",
+      "dateRange": "Date Range",
+      "totalDays": "Total Days"
+    },
+    "settings": {
+      "batchSize": "Batch Size (POST)"
+    },
+    "progress": {
+      "title": "Migration Progress",
+      "currentDay": "Current Day",
+      "status": "Status",
+      "dataPoints": "Data Points",
+      "startTime": "Start Time",
+      "elapsed": "Elapsed Time",
+      "elapsedTime": "Time Elapsed:",
+      "estimatedRemaining": "Estimated Remaining",
+      "estimatedTime": "Estimated Time Remaining:"
+    },
+    "status": {
+      "pending": "Pending",
+      "running": "Running",
+      "success": "Success",
+      "error": "Error"
+    },
+    "logView": {
+      "raw": "Raw Logs",
+      "formatted": "Formatted View",
+      "rawTooltip": "Show technical log output with timestamps and raw data",
+      "formattedTooltip": "Show clean, user-friendly view with icons and colored status"
+    },
+    "buttons": {
+      "start": "Start Migration",
+      "previous": "Previous: Destination",
+      "cancel": "Cancel",
+      "retry": "Retry",
+      "viewDetails": "View Details",
+      "back": "Back to Destination",
+      "backToLogin": "Back to Login",
+      "migrateAgain": "Migrate Again",
+      "retryMigration": "Retry Migration",
+      "newMigration": "New Migration",
+      "save": "Save Settings"
+    },
+    "messages": {
+      "starting": "Starting migration...",
+      "completed": "Migration completed successfully!",
+      "failed": "Migration failed",
+      "cancelled": "Migration cancelled"
+    }
+  },
+  "fields": {
+    "entityType": {
+      "label": "Entity Type",
+      "placeholder": "e.g., DEVICE, ASSET",
+      "tooltip": "ThingsBoard entity type (DEVICE, ASSET, etc.)"
+    },
+    "entityId": {
+      "label": "Entity ID",
+      "placeholder": "Enter entity ID",
+      "tooltip": "Unique UUID of the entity to fetch data from"
+    },
+    "entityName": {
+      "label": "Entity Name",
+      "tooltip": "Entity name (auto-fetched after 1.5 seconds)"
+    },
+    "keys": {
+      "label": "Keys",
+      "placeholder": "Comma-separated telemetry keys",
+      "tooltip": "List of telemetry keys to fetch (comma-separated)"
+    },
+    "startTimestamp": {
+      "label": "Start Timestamp",
+      "utc": "(WIB)",
+      "tooltip": "Start time for telemetry data fetch (WIB timezone)"
+    },
+    "endTimestamp": {
+      "label": "End Timestamp",
+      "utc": "(WIB)",
+      "tooltip": "End time for telemetry data fetch (WIB timezone)"
+    },
+    "intervalType": {
+      "label": "Interval Type",
+      "placeholder": "-- Select Interval Type --",
+      "tooltip": "Interval type for data aggregation (WEEK, MONTH, QUARTER, etc.)",
+      "options": {
+        "milliseconds": "Milliseconds",
+        "week": "Week",
+        "weekIso": "Week (ISO)",
+        "month": "Month",
+        "quarter": "Quarter"
+      }
+    },
+    "interval": {
+      "label": "Interval",
+      "note": "(milliseconds, default: 0)",
+      "placeholder": "0",
+      "tooltip": "Interval duration in milliseconds (example: 3600000 = 1 hour)"
+    },
+    "timeZone": {
+      "label": "Time Zone",
+      "note": "(for WEEK/MONTH/QUARTER)",
+      "placeholder": "e.g., Asia/Jakarta, UTC",
+      "tooltip": "Timezone for interval calculation (example: Asia/Jakarta, UTC)"
+    },
+    "limit": {
+      "label": "Limit",
+      "note": "(max records, default: 100)",
+      "placeholder": "100",
+      "tooltip": "Maximum number of data points per request (default: 100, max: 50000)"
+    },
+    "aggregation": {
+      "label": "Aggregation Function",
+      "placeholder": "-- Select Aggregation --",
+      "tooltip": "Aggregation function for data in intervals (MIN, MAX, AVG, SUM, COUNT)",
+      "options": {
+        "none": "None",
+        "min": "Minimum",
+        "max": "Maximum",
+        "avg": "Average",
+        "sum": "Sum",
+        "count": "Count"
+      }
+    },
+    "orderBy": {
+      "label": "Order By",
+      "placeholder": "-- Default (ASC) --",
+      "tooltip": "Data sorting order by timestamp (ASC from old to new, DESC from new to old)",
+      "options": {
+        "asc": "Ascending",
+        "desc": "Descending"
+      }
+    },
+    "useStrictDataTypes": {
+      "label": "Use Strict Data Types",
+      "note": "(disable string conversion)",
+      "tooltip": "Preserve original data types without string conversion (number stays number)"
+    },
+    "rangeMode": {
+      "label": "Range Mode",
+      "tooltip": "Method for dividing time range for data fetch (1 Day = fetch per day)",
+      "options": {
+        "oneDay": "1 Day per Request"
+      }
+    }
+  },
+  "messages": {
+    "entityNotFound": "Entity not found",
+    "errorChecking": "Error checking entity",
+    "checking": "Checking...",
+    "autoChecking": "Auto-checking...",
+    "loading": "Loading...",
+    "required": "This field is required"
+  }
+}

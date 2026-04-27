@@ -1,0 +1,50 @@
+[
+  {
+    "targetEntityType": "DEVICE",
+    "targetEntityId": "4c50ea10-1844-11f1-977f-5991869879f8",
+    "scope": "ANY",
+    "targetEntityName": "VTC-CMNP-CAM1",
+    "timestamp": 1772682098594,
+    "id": 1772682098594
+  },
+  {
+    "targetEntityType": "ASSET",
+    "targetEntityId": "5db4de00-0b11-11f1-977f-5991869879f8",
+    "scope": "ANY",
+    "targetEntityName": "Test PWSS",
+    "timestamp": 1771391637662,
+    "id": 1771391637662
+  },
+  {
+    "targetEntityType": "ASSET",
+    "targetEntityId": "f60bb260-0b10-11f1-977f-5991869879f8",
+    "scope": "ANY",
+    "targetEntityName": "Test",
+    "timestamp": 1771230328097,
+    "id": 1771230328097
+  },
+  {
+    "targetEntityType": "ASSET",
+    "targetEntityId": "50eebf30-0add-11f1-977f-5991869879f8",
+    "scope": "ANY",
+    "targetEntityName": "Testing PWSS",
+    "timestamp": 1771229955953,
+    "id": 1771229955953
+  },
+  {
+    "targetEntityType": "ASSET",
+    "targetEntityId": "47d14660-0a43-11f1-977f-5991869879f8",
+    "scope": "ANY",
+    "targetEntityName": "Testing Migration PWSS",
+    "timestamp": 1771149996884,
+    "id": 1771149996884
+  },
+  {
+    "targetEntityType": "ASSET",
+    "targetEntityId": "1829a8b0-07e3-11f1-977f-5991869879f8",
+    "scope": "ANY",
+    "targetEntityName": "PWSS-IDM-03",
+    "timestamp": 1771122077663,
+    "id": 1771122077663
+  }
+]

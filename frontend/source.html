@@ -1,0 +1,597 @@
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Source Configuration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    <style>
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      .animate-spin {
+        animation: spin 1s linear infinite;
+      }
+      
+      /* Tooltip Styles */
+      .tooltip-wrapper {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        cursor: help;
+      }
+      
+      .tooltip-icon {
+        color: #9CA3AF;
+        font-size: 14px;
+        transition: color 0.2s;
+      }
+      
+      .tooltip-wrapper:hover .tooltip-icon {
+        color: #1E22AA;
+      }
+      
+      .tooltip-text {
+        visibility: hidden;
+        position: absolute;
+        bottom: calc(100% + 10px);
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1F2937;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        line-height: 1.4;
+        white-space: normal;
+        max-width: 280px;
+        width: max-content;
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out, visibility 0.2s;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        pointer-events: none;
+      }
+      
+      .tooltip-wrapper:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+      }
+      
+      /* Tooltip Arrow */
+      .tooltip-text::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 5px solid transparent;
+        border-top-color: #1F2937;
+      }
+    </style>
+  </head>
+
+  <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-6xl w-full mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <!-- Main Form -->
+      <div class="lg:col-span-2 bg-white p-4 sm:p-6 rounded-2xl shadow-xl">
+        <!-- Steps Indicator -->
+        <div class="flex items-center justify-center mb-6 px-4">
+          <div class="flex items-center space-x-2">
+            <div class="flex items-center">
+              <div class="w-8 h-8 rounded-full text-white flex items-center justify-center" style="background-color: #E5005A;">
+                <span class="iconify text-lg" data-icon="mdi:check"></span>
+              </div>
+              <span class="ml-2 text-sm font-medium" style="color: #E5005A;" data-i18n="navigation.step1">Login</span>
+            </div>
+            <div class="w-8 h-0.5" style="background-color: #E5005A;"></div>
+            <div class="flex items-center">
+              <div class="w-8 h-8 rounded-full text-white flex items-center justify-center text-sm font-bold" style="background-color: #1E22AA;">
+                2
+              </div>
+              <span class="ml-2 text-sm font-medium" style="color: #1E22AA;" data-i18n="navigation.step2">Source</span>
+            </div>
+            <div class="w-8 h-0.5 bg-gray-300"></div>
+            <div class="flex items-center">
+              <div class="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-bold">
+                3
+              </div>
+              <span class="ml-2 text-sm font-medium text-gray-500" data-i18n="navigation.step3">Destination</span>
+            </div>
+            <div class="w-8 h-0.5 bg-gray-300"></div>
+            <div class="flex items-center">
+              <div class="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-bold">
+                4
+              </div>
+              <span class="ml-2 text-sm font-medium text-gray-500" data-i18n="navigation.step4">Migrate</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold flex items-center gap-2" style="color: #1E22AA;">
+            <span class="iconify" data-icon="mdi:database-export"></span>
+            <span data-i18n="source.title">Source Configuration</span>
+          </h2>
+          
+          <!-- Language Toggle Button -->
+          <button
+            type="button"
+            id="langToggleBtn"
+            onclick="toggleLanguage()"
+            class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700"
+            title="Switch Language"
+          >
+            <span class="flag-icon iconify" data-icon="emojione:flag-for-united-states"></span>
+            <span class="lang-text">EN</span>
+            <span class="iconify" data-icon="mdi:translate"></span>
+          </button>
+        </div>
+
+      <form id="senderForm" class="space-y-3">
+        <!-- Required Fields Section -->
+        <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
+          <h3 class="text-xs font-bold text-blue-800 mb-3 uppercase tracking-wide flex items-center gap-2">
+            <span class="iconify" data-icon="mdi:asterisk"></span>
+            <span data-i18n="source.requiredSection">Required Fields</span>
+          </h3>
+          
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                <span data-i18n="fields.entityType.label">Entity Type</span> <span class="text-red-500">*</span>
+                <span class="tooltip-wrapper" data-i18n-tooltip="fields.entityType.tooltip">
+                  <span class="tooltip-icon iconify" data-icon="mdi:information-outline"></span>
+                  <span class="tooltip-text">Tipe entitas ThingsBoard (DEVICE, ASSET, dll)</span>
+                </span>
+              </label>
+              <input
+                id="senderEntityType"
+                class="w-full border p-2 rounded-lg text-sm uppercase"
+                data-i18n-placeholder="fields.entityType.placeholder"
+                placeholder="e.g., DEVICE, ASSET"
+                oninput="safeToggleSelectKeysButton(); safeToggleCheckSourceButton(); safeHandleEntityIdInput();"
+                required
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                <span data-i18n="fields.entityId.label">Entity ID</span> <span class="text-red-500">*</span>
+                <span class="tooltip-wrapper" data-i18n-tooltip="fields.entityId.tooltip">
+                  <span class="tooltip-icon iconify" data-icon="mdi:information-outline"></span>
+                  <span class="tooltip-text">UUID unik dari entity yang akan diambil datanya</span>
+                </span>
+              </label>
+          <div class="flex gap-2">
+            <input
+              id="senderEntityId"
+              class="flex-1 border p-2 rounded-lg text-sm"
+              data-i18n-placeholder="fields.entityId.placeholder"
+              placeholder="Enter entity ID"
+              oninput="safeToggleSelectKeysButton(); safeToggleCheckSourceButton(); safeHandleEntityIdInput();"
+              required
+            />
+            <button
+              type="button"
+              id="checkSourceEntityBtn"
+              onclick="checkSourceEntityName()"
+              disabled
+              class="px-4 py-2 border rounded-lg text-sm font-medium flex items-center gap-2 whitespace-nowrap transition-all hover:bg-blue-50 disabled:bg-gray-100 disabled:border-gray-300 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-gray-100"
+              style="color: #1E22AA; border-color: #1E22AA;"
+            >
+              <span class="iconify" data-icon="mdi:check-circle"></span>
+              <span data-i18n="source.buttons.check">Check</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="sourceEntityNameContainer">
+          <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+            <span data-i18n="fields.entityName.label">Entity Name</span>
+            <span class="tooltip-wrapper" data-i18n-tooltip="fields.entityName.tooltip">
+              <span class="tooltip-icon iconify" data-icon="mdi:information-outline"></span>
+              <span class="tooltip-text">Nama entity (informasi saja, diambil otomatis setelah 1.5 detik)</span>
+            </span>
+          </label>
+          <div class="w-full border p-2 rounded-lg text-sm bg-gray-50 text-gray-700" id="sourceEntityNameDisplay">
+            -
+          </div>
+        </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                <span data-i18n="fields.keys.label">Keys</span> <span class="text-red-500">*</span>
+                <span class="tooltip-wrapper" data-i18n-tooltip="fields.keys.tooltip">
+                  <span class="tooltip-icon iconify" data-icon="mdi:information-outline"></span>
+                  <span class="tooltip-text">Daftar telemetry keys yang akan diambil (pisahkan dengan koma)</span>
+                </span>
+              </label>
+              <div class="flex gap-2">
+                <div class="relative flex-1">
+                  <input
+                    id="senderKeys"
+                    class="w-full border p-2 rounded-lg text-sm"
+                    data-i18n-placeholder="fields.keys.placeholder"
+                    placeholder="Comma-separated telemetry keys"
+                    required
+                  />
+                </div>
+            <button
+              type="button"
+              id="selectKeysBtn"
+              onclick="openKeysDialog()"
+              disabled
+              class="px-4 py-2 border rounded-lg text-sm font-medium flex items-center gap-2 whitespace-nowrap transition-all hover:bg-blue-50 disabled:bg-gray-100 disabled:border-gray-300 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-gray-100"
+              style="color: #1E22AA; border-color: #1E22AA;"
+            >
+                  <span class="iconify" data-icon="mdi:playlist-check"></span>
+                  <span data-i18n="source.buttons.select">Select</span>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                <span data-i18n="fields.startTimestamp.label">Start Timestamp</span> <span class="text-red-500">*</span>
+                <span class="text-gray-500 font-normal" data-i18n="fields.startTimestamp.utc">(WIB)</span>
+                <span class="tooltip-wrapper" data-i18n-tooltip="fields.startTimestamp.tooltip">
+                  <span class="tooltip-icon iconify" data-icon="mdi:information-outline"></span>
+                  <span class="tooltip-text">Waktu mulai pengambilan data telemetry (WIB timezone)</span>
+                </span>
+              </label>
+              <input
+                id="senderStart"
+                type="datetime-local"
+                step="1"
+                class="w-full border p-2 rounded-lg text-sm"
+                required
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                <span data-i18n="fields.endTimestamp.label">End Timestamp</span> <span class="text-red-500">*</span>
+                <span class="text-gray-500 font-normal" data-i18n="fields.endTimestamp.utc">(WIB)</span>
+                <span class="tooltip-wrapper" data-i18n-tooltip="fields.endTimestamp.tooltip">
+                  <span class="tooltip-icon iconify" data-icon="mdi:information-outline"></span>
+                  <span class="tooltip-text">Waktu akhir pengambilan data telemetry (WIB timezone)</span>
+                </span>
+              </label>
+              <input
+                id="senderEnd"
+                type="datetime-local"
+                step="1"
+                class="w-full border p-2 rounded-lg text-sm"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Optional Fields Section -->
+        <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+          <h3 class="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide flex items-center gap-2">
+            <span class="iconify" data-icon="mdi:tune"></span>
+            <span data-i18n="source.optionalSection">Optional Parameters</span>
+          </h3>
+          
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                <span data-i18n="fields.intervalType.label">Interval Type</span>
+                <span class="tooltip-wrapper" data-i18n-tooltip="fields.intervalType.tooltip">
+                  <span class="tooltip-icon iconify" data-icon="mdi:information-outline"></span>
+                  <span class="tooltip-text">Tipe interval untuk aggregasi data (WEEK, MONTH, QUARTER, dll)</span>
+                </span>
+              </label>
+              <select id="intervalType" class="w-full border p-2 rounded-lg text-sm">
+                <option value="" data-i18n="fields.intervalType.placeholder">-- Select Interval Type --</option>
+                <option value="MILLISECONDS" data-i18n="fields.intervalType.options.milliseconds">Milliseconds</option>
+                <option value="WEEK" data-i18n="fields.intervalType.options.week">Week</option>
+                <option value="WEEK_ISO" data-i18n="fields.intervalType.options.weekIso">Week (ISO)</option>
+                <option value="MONTH" data-i18n="fields.intervalType.options.month">Month</option>
+                <option value="QUARTER" data-i18n="fields.intervalType.options.quarter">Quarter</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                <span data-i18n="fields.interval.label">Interval</span>
+                <span class="text-gray-500 font-normal text-xs" data-i18n="fields.interval.note">(milliseconds, default: 0)</span>
+                <span class="tooltip-wrapper" data-i18n-tooltip="fields.interval.tooltip">
+                  <span class="tooltip-icon iconify" data-icon="mdi:information-outline"></span>
+                  <span class="tooltip-text">Durasi interval dalam milliseconds (contoh: 3600000 = 1 jam)</span>
+                </span>
+              </label>
+              <input
+                id="interval"
+                type="number"
+                min="0"
+                class="w-full border p-2 rounded-lg text-sm"
+                data-i18n-placeholder="fields.interval.placeholder"
+                placeholder="0"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                <span data-i18n="fields.timeZone.label">Time Zone</span>
+                <span class="text-gray-500 font-normal text-xs" data-i18n="fields.timeZone.note">(for WEEK/MONTH/QUARTER)</span>
+                <span class="tooltip-wrapper" data-i18n-tooltip="fields.timeZone.tooltip">
+                  <span class="tooltip-icon iconify" data-icon="mdi:information-outline"></span>
+                  <span class="tooltip-text">Timezone untuk kalkulasi interval (contoh: Asia/Jakarta, UTC)</span>
+                </span>
+              </label>
+              <input
+                id="timeZone"
+                type="text"
+                class="w-full border p-2 rounded-lg text-sm"
+                data-i18n-placeholder="fields.timeZone.placeholder"
+                placeholder="e.g., Asia/Jakarta, UTC"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                <span data-i18n="fields.limit.label">Limit</span>
+                <span class="text-gray-500 font-normal text-xs" data-i18n="fields.limit.note">(max records, default: 100)</span>
+                <span class="tooltip-wrapper" data-i18n-tooltip="fields.limit.tooltip">
+                  <span class="tooltip-icon iconify" data-icon="mdi:information-outline"></span>
+                  <span class="tooltip-text">Maximum jumlah data points per request (default: 100, max: 50000)</span>
+                </span>
+              </label>
+              <input
+                id="senderLimit"
+                type="number"
+                min="1"
+                max="50000"
+                class="w-full border p-2 rounded-lg text-sm"
+                data-i18n-placeholder="fields.limit.placeholder"
+                placeholder="100"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                <span data-i18n="fields.aggregation.label">Aggregation Function</span>
+                <span class="tooltip-wrapper" data-i18n-tooltip="fields.aggregation.tooltip">
+                  <span class="tooltip-icon iconify" data-icon="mdi:information-outline"></span>
+                  <span class="tooltip-text">Fungsi aggregasi data dalam interval (MIN, MAX, AVG, SUM, COUNT)</span>
+                </span>
+              </label>
+              <select id="agg" class="w-full border p-2 rounded-lg text-sm">
+                <option value="" data-i18n="fields.aggregation.placeholder">-- Select Aggregation --</option>
+                <option value="NONE" data-i18n="fields.aggregation.options.none">None</option>
+                <option value="MIN" data-i18n="fields.aggregation.options.min">Minimum</option>
+                <option value="MAX" data-i18n="fields.aggregation.options.max">Maximum</option>
+                <option value="AVG" data-i18n="fields.aggregation.options.avg">Average</option>
+                <option value="SUM" data-i18n="fields.aggregation.options.sum">Sum</option>
+                <option value="COUNT" data-i18n="fields.aggregation.options.count">Count</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                <span data-i18n="fields.orderBy.label">Order By</span>
+                <span class="tooltip-wrapper" data-i18n-tooltip="fields.orderBy.tooltip">
+                  <span class="tooltip-icon iconify" data-icon="mdi:information-outline"></span>
+                  <span class="tooltip-text">Urutan sorting data berdasarkan timestamp (ASC dari lama ke baru, DESC dari baru ke lama)</span>
+                </span>
+              </label>
+              <select id="orderBy" class="w-full border p-2 rounded-lg text-sm">
+                <option value="" data-i18n="fields.orderBy.placeholder">-- Default (ASC) --</option>
+                <option value="ASC" data-i18n="fields.orderBy.options.asc">Ascending</option>
+                <option value="DESC" data-i18n="fields.orderBy.options.desc">Descending</option>
+              </select>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <input
+                id="useStrictDataTypes"
+                type="checkbox"
+                class="w-4 h-4 rounded"
+                style="accent-color: #1E22AA;"
+              />
+              <label for="useStrictDataTypes" class="text-xs text-gray-700 flex items-center gap-1">
+                <span data-i18n="fields.useStrictDataTypes.label">Use Strict Data Types</span>
+                <span class="text-gray-500 font-normal" data-i18n="fields.useStrictDataTypes.note">(disable string conversion)</span>
+                <span class="tooltip-wrapper" data-i18n-tooltip="fields.useStrictDataTypes.tooltip">
+                  <span class="tooltip-icon iconify" data-icon="mdi:information-outline"></span>
+                  <span class="tooltip-text">Preserve tipe data original tanpa konversi ke string (number tetap number)</span>
+                </span>
+              </label>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                <span data-i18n="fields.rangeMode.label">Range Mode</span>
+                <span class="tooltip-wrapper" data-i18n-tooltip="fields.rangeMode.tooltip">
+                  <span class="tooltip-icon iconify" data-icon="mdi:information-outline"></span>
+                  <span class="tooltip-text">Cara pembagian range waktu untuk fetch data (1 Day = fetch per hari)</span>
+                </span>
+              </label>
+              <select id="rangeMode" class="w-full border p-2 rounded-lg text-sm">
+                <option value="1" data-i18n="fields.rangeMode.options.oneDay">1 Day per Request</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex gap-3 pt-2">
+          <button
+            type="button"
+            onclick="window.location.href='index.html'"
+            class="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm hover:bg-gray-50 flex items-center justify-center gap-2"
+          >
+            <span class="iconify" data-icon="mdi:arrow-left-circle"></span>
+            <span data-i18n="source.buttons.back">Back to Login</span>
+          </button>
+          <button
+            type="submit"
+            class="flex-1 text-white py-2 rounded-lg text-sm flex items-center justify-center gap-2"
+            style="background-color: #1E22AA;"
+          >
+            <span class="iconify" data-icon="mdi:arrow-right-circle"></span>
+            <span data-i18n="source.buttons.next">Next: Destination</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- History Sidebar -->
+    <div class="bg-white p-4 rounded-2xl shadow-xl lg:sticky lg:top-4 self-start">
+      <h3 class="font-bold text-sm mb-3 flex items-center gap-2" style="color: #1E22AA;">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        Recent Configurations
+      </h3>
+      <div id="sourceHistoryContainer" class="space-y-2 overflow-y-auto" style="max-height: calc(100vh - 20rem);">
+        <!-- History items will be populated by JavaScript -->
+      </div>
+    </div>
+  </div>
+
+    <!-- Keys Selection Modal -->
+    <div id="keysModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between p-4 border-b" style="background-color: #F0F0FF;">
+          <h3 class="font-bold text-lg flex items-center gap-2" style="color: #1E22AA;">
+            <span class="iconify" data-icon="mdi:key-variant"></span>
+            Select Keys
+          </h3>
+          <button onclick="closeKeysDialog()" class="text-gray-400 hover:text-gray-600">
+            <span class="iconify text-2xl" data-icon="mdi:close"></span>
+          </button>
+        </div>
+
+        <!-- Loading State -->
+        <div id="keysLoading" class="flex-1 flex items-center justify-center p-8">
+          <div class="text-center">
+            <span class="iconify text-5xl animate-spin mb-3" data-icon="mdi:loading" style="color: #1E22AA;"></span>
+            <p class="text-gray-600">Loading keys...</p>
+          </div>
+        </div>
+
+        <!-- Error State -->
+        <div id="keysError" class="hidden flex-1 flex items-center justify-center p-8">
+          <div class="text-center">
+            <span class="iconify text-5xl text-red-500 mb-3" data-icon="mdi:alert-circle"></span>
+            <p class="text-red-600 font-medium mb-2">Failed to load keys</p>
+            <p id="keysErrorMessage" class="text-sm text-gray-600"></p>
+          </div>
+        </div>
+
+        <!-- Keys List -->
+        <div id="keysList" class="hidden flex-1 flex flex-col overflow-hidden">
+          <!-- Search Bar -->
+          <div class="p-4 border-b">
+            <div class="relative">
+              <span class="iconify absolute left-3 top-2.5 text-gray-400" data-icon="mdi:magnify"></span>
+              <input
+                id="keysSearch"
+                type="text"
+                placeholder="Search keys..."
+                class="w-full border p-2 pl-10 rounded-lg text-sm"
+                oninput="filterKeys()"
+              />
+            </div>
+            <div class="mt-2 flex items-center justify-between text-xs text-gray-600">
+              <span id="keysCount">0 keys available</span>
+              <div class="flex gap-2">
+                <button onclick="selectAllKeys()" class="hover:underline" style="color: #1E22AA;">Select All</button>
+                <span class="text-gray-300">|</span>
+                <button onclick="clearAllKeys()" class="hover:underline text-gray-600">Clear All</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Keys Checkboxes -->
+          <div id="keysContainer" class="flex-1 overflow-y-auto p-4 space-y-1">
+            <!-- Keys will be populated here -->
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="p-4 border-t flex gap-3">
+          <button
+            onclick="closeKeysDialog()"
+            class="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            onclick="applySelectedKeys()"
+            class="flex-1 text-white py-2 rounded-lg text-sm font-medium hover:opacity-90"
+            style="background-color: #1E22AA;"
+          >
+            Apply Selected
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Source History Detail Modal -->
+    <div id="sourceHistoryModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onclick="if(event.target === this) closeSourceHistoryModal()">
+      <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full mx-4">
+        <div class="flex items-center justify-between p-4 border-b">
+          <h3 class="font-bold text-gray-800 flex items-center gap-2">
+            <span class="iconify" data-icon="mdi:file-document-outline" style="color: #1E22AA;"></span>
+            Source Configuration Details
+          </h3>
+          <button onclick="closeSourceHistoryModal()" class="p-1 hover:bg-gray-100 rounded transition">
+            <span class="iconify text-xl text-gray-600" data-icon="mdi:close"></span>
+          </button>
+        </div>
+        <div class="p-4 max-h-[60vh] overflow-y-auto">
+          <div id="sourceHistoryModalContent"></div>
+        </div>
+        <div class="flex gap-3 p-4 border-t bg-gray-50">
+          <button onclick="closeSourceHistoryModal()" class="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm hover:bg-gray-50 font-medium">
+            Cancel
+          </button>
+          <button onclick="applySourceHistoryFromModal()" class="flex-1 text-white py-2 rounded-lg text-sm font-medium hover:opacity-90" style="background-color: #1E22AA;">
+            Apply Config
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Load modular JS files -->
+    <script src="js/i18n.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/auth-handler.js"></script>
+    <script src="js/keys.js"></script>
+    <script src="js/source.js"></script>
+    <script src="js/history.js"></script>
+    
+    <!-- Initialize inline event handlers after scripts loaded -->
+    <script>
+      // Safe wrapper functions for inline event handlers
+      function safeHandleEntityIdInput() {
+        if (typeof window.handleEntityIdInput === 'function') {
+          window.handleEntityIdInput();
+        }
+      }
+      
+      function safeToggleSelectKeysButton() {
+        if (typeof window.toggleSelectKeysButton === 'function') {
+          window.toggleSelectKeysButton();
+        }
+      }
+      
+      function safeToggleCheckSourceButton() {
+        if (typeof window.toggleCheckSourceButton === 'function') {
+          window.toggleCheckSourceButton();
+        }
+      }
+    </script>
+  </body>
+</html>

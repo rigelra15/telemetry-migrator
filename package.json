@@ -1,0 +1,69 @@
+{
+  "name": "telemetry-migrator",
+  "version": "1.0.0",
+  "description": "Tool untuk migrasi data telemetri antar sistem ThingsBoard",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "build": "electron-builder",
+    "build-backend": "node build-backend.js",
+    "build-all": "npm run build-backend && npm run build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "build": {
+    "appId": "com.xlsmart.telemetrymigrator",
+    "productName": "Telemetry Migrator",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "frontend/**/*",
+      "backend/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.utilities",
+      "icon": "logo.icns"
+    },
+    "win": {
+      "target": "portable",
+      "icon": "logo.ico"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "logo.png"
+    },
+    "extraResources": [
+      {
+        "from": "dist/telemetry-backend",
+        "to": "bin/telemetry-backend",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "frontend",
+        "to": "frontend",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "backend/.env",
+        "to": "backend/.env"
+      }
+    ]
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {
+    "axios": "^1.6.8",
+    "cross-spawn": "^7.0.3"
+  }
+}
