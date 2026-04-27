@@ -9,6 +9,11 @@ jobs:
   build:
     name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    
+    # Tambahkan permission ini agar Actions diizinkan membuat Release
+    permissions:
+      contents: write
+      
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
