@@ -45,10 +45,11 @@
     },
     "extraResources": [
       {
-        "from": "dist/telemetry-backend",
-        "to": "bin/telemetry-backend",
+        "from": "dist",
+        "to": "bin",
         "filter": [
-          "**/*"
+          "telemetry-backend",
+          "telemetry-backend.exe"
         ]
       },
       {
