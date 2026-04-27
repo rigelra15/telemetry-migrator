@@ -253,19 +253,32 @@ async def refresh_access_token(source: str) -> Optional[str]:
 
 async def login_to_thingsboard(base_url: str, username: str, password: str) -> dict:
     """Login to ThingsBoard and return token + refreshToken"""
-    async with httpx.AsyncClient(timeout=30.0, verify=False) as client:
-        response = await client.post(
-            f"{base_url}/api/auth/login",
-            json={"username": username, "password": password}
-        )
-        if response.status_code != 200:
-            raise HTTPException(status_code=400, detail="Login failed")
-        
-        data = response.json()
-        return {
-            "token": data.get("token"),
-            "refreshToken": data.get("refreshToken")
-        }
+    try:
+        async with httpx.AsyncClient(timeout=30.0, verify=False) as client:
+            response = await client.post(
+                f"{base_url}/api/auth/login",
+                json={"username": username, "password": password}
+            )
+            if response.status_code != 200:
+                # Try to extract error message from ThingsBoard
+                try:
+                    err_data = response.json()
+                    err_msg = err_data.get("message", response.text)
+                except:
+                    err_msg = response.text
+                logger.error(f"ThingsBoard login failed (HTTP {response.status_code}): {err_msg}")
+                raise HTTPException(status_code=response.status_code, detail=f"ThingsBoard: {err_msg}")
+            
+            data = response.json()
+            return {
+                "token": data.get("token"),
+                "refreshToken": data.get("refreshToken")
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Login connection error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Connection error: {str(e)}")
 
 def transform_data(data: dict) -> list:
     """Transform telemetry data to required format
