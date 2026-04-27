@@ -1,8 +1,9 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const os = require('os');
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 
 let pyProcess = null;
@@ -170,6 +171,106 @@ function createWindow() {
   win.loadURL('http://localhost:8000/index.html');
   win.setMenuBarVisibility(false);
 }
+
+// ==================== UPDATE CHECKER ====================
+const GITHUB_REPO = 'rigelra15/telemetry-migrator';
+
+function checkForUpdates() {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'api.github.com',
+      path: `/repos/${GITHUB_REPO}/releases/latest`,
+      headers: { 'User-Agent': 'Telemetry-Migrator-App' }
+    };
+
+    https.get(options, (res) => {
+      let data = '';
+      
+      // Follow redirects
+      if (res.statusCode === 301 || res.statusCode === 302) {
+        https.get(res.headers.location, { headers: options.headers }, (redirectRes) => {
+          let redirectData = '';
+          redirectRes.on('data', chunk => redirectData += chunk);
+          redirectRes.on('end', () => {
+            try { resolve(JSON.parse(redirectData)); } catch (e) { reject(e); }
+          });
+        }).on('error', reject);
+        return;
+      }
+
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try { resolve(JSON.parse(data)); } catch (e) { reject(e); }
+      });
+    }).on('error', reject);
+  });
+}
+
+// IPC: Check for updates
+ipcMain.handle('check-for-updates', async () => {
+  try {
+    const currentVersion = app.getVersion();
+    const release = await checkForUpdates();
+    
+    if (!release || !release.tag_name) {
+      return { updateAvailable: false };
+    }
+
+    const latestVersion = release.tag_name.replace(/^v/, '');
+    
+    // Compare versions
+    const current = currentVersion.split('.').map(Number);
+    const latest = latestVersion.split('.').map(Number);
+    
+    let updateAvailable = false;
+    for (let i = 0; i < 3; i++) {
+      if ((latest[i] || 0) > (current[i] || 0)) { updateAvailable = true; break; }
+      if ((latest[i] || 0) < (current[i] || 0)) break;
+    }
+
+    // Determine the right download URL based on platform
+    let downloadUrl = release.html_url; // fallback to release page
+    const platform = os.platform();
+    if (release.assets) {
+      for (const asset of release.assets) {
+        const name = asset.name.toLowerCase();
+        if (platform === 'win32' && name.endsWith('.exe')) {
+          downloadUrl = asset.browser_download_url;
+          break;
+        } else if (platform === 'darwin' && name.endsWith('.dmg')) {
+          downloadUrl = asset.browser_download_url;
+          break;
+        } else if (platform === 'linux' && name.endsWith('.appimage')) {
+          downloadUrl = asset.browser_download_url;
+          break;
+        }
+      }
+    }
+
+    return {
+      updateAvailable,
+      currentVersion,
+      latestVersion,
+      releaseNotes: release.body || '',
+      releaseName: release.name || `v${latestVersion}`,
+      downloadUrl,
+      publishedAt: release.published_at
+    };
+  } catch (error) {
+    console.error('Update check failed:', error.message);
+    return { updateAvailable: false, error: error.message };
+  }
+});
+
+// IPC: Open external URL
+ipcMain.handle('open-external', async (event, url) => {
+  await shell.openExternal(url);
+});
+
+// IPC: Get current app version
+ipcMain.handle('get-app-version', () => {
+  return app.getVersion();
+});
 
 app.whenReady().then(async () => {
   startPythonBackend();

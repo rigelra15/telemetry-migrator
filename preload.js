@@ -1,5 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  // We can add APIs here later
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
+  getAppVersion: () => ipcRenderer.invoke('get-app-version'),
 });

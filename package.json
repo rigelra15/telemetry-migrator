@@ -1,6 +1,6 @@
 {
   "name": "telemetry-migrator",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Tool untuk migrasi data telemetri antar sistem ThingsBoard",
   "main": "main.js",
   "scripts": {
@@ -9,7 +9,7 @@
     "build": "electron-builder",
     "build-backend": "node build-backend.js",
     "build-all": "npm run build-backend && npm run build",
-    "release": "npm version patch --no-git-tag-version && git add package.json && git commit --amend --no-edit && git tag v$(node -p \"require('./package.json').version\") && git push origin main --follow-tags"
+    "release": "npm version patch --no-git-tag-version && git add package.json && git commit --amend --no-edit && git tag v$(node -p \"require('./package.json').version\") && git push origin main --tags"
   },
   "keywords": [],
   "repository": {

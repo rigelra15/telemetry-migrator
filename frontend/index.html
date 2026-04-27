@@ -222,6 +222,69 @@
       </div>
     </div>
 
+    <!-- Update Available Modal -->
+    <div id="updateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] hidden">
+      <div id="updateModalContent" class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden transform scale-90 opacity-0 transition-all duration-300">
+        <!-- Header -->
+        <div class="px-6 py-5" style="background: linear-gradient(135deg, #1E22AA, #E5005A);">
+          <div class="flex items-center gap-3">
+            <div class="bg-white bg-opacity-20 rounded-xl p-2.5">
+              <span class="iconify text-white text-2xl" data-icon="mdi:update"></span>
+            </div>
+            <div>
+              <h3 class="text-white font-bold text-lg">Update Available!</h3>
+              <p class="text-white text-opacity-80 text-xs" id="updateVersionInfo">New version available</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="px-6 py-4">
+          <!-- Version badge -->
+          <div class="flex items-center gap-2 mb-3">
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+              <span class="iconify" data-icon="mdi:tag-outline"></span>
+              Current: <span id="updateCurrentVersion">-</span>
+            </span>
+            <span class="iconify text-gray-400" data-icon="mdi:arrow-right"></span>
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold text-white" style="background: linear-gradient(135deg, #1E22AA, #E5005A);">
+              <span class="iconify" data-icon="mdi:star"></span>
+              Latest: <span id="updateLatestVersion">-</span>
+            </span>
+          </div>
+
+          <!-- What's New -->
+          <div class="mb-4">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+              <span class="iconify" data-icon="mdi:text-box-outline"></span>
+              What's New
+            </p>
+            <div id="updateReleaseNotes" class="text-sm text-gray-700 bg-gray-50 rounded-xl p-3 max-h-40 overflow-y-auto leading-relaxed border border-gray-100" style="white-space: pre-wrap;">
+              No release notes available.
+            </div>
+          </div>
+
+          <!-- Published date -->
+          <p id="updatePublishedAt" class="text-xs text-gray-400 flex items-center gap-1 mb-4">
+            <span class="iconify" data-icon="mdi:clock-outline"></span>
+            <span>-</span>
+          </p>
+        </div>
+
+        <!-- Footer buttons -->
+        <div class="px-6 pb-5 flex gap-3">
+          <button id="updateLaterBtn" onclick="closeUpdateModal()" class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center gap-2">
+            <span class="iconify" data-icon="mdi:clock-outline"></span>
+            Maybe Later
+          </button>
+          <button id="updateDownloadBtn" onclick="downloadUpdate()" class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:shadow-lg hover:scale-[1.02] flex items-center justify-center gap-2" style="background: linear-gradient(135deg, #1E22AA, #E5005A);">
+            <span class="iconify" data-icon="mdi:download"></span>
+            Download
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="fixed bottom-6 right-6 flex flex-col gap-3 z-50"></div>
 
@@ -274,9 +337,55 @@
         }
       }
 
-      // Check backend health on load
+      // ==================== UPDATE CHECKER ====================
+      let updateDownloadUrl = '';
+
+      function showUpdateModal(data) {
+        document.getElementById('updateCurrentVersion').textContent = data.currentVersion;
+        document.getElementById('updateLatestVersion').textContent = data.latestVersion;
+        document.getElementById('updateVersionInfo').textContent = `${data.releaseName} is now available`;
+        document.getElementById('updateReleaseNotes').textContent = data.releaseNotes || 'No release notes available.';
+        
+        if (data.publishedAt) {
+          const date = new Date(data.publishedAt);
+          document.getElementById('updatePublishedAt').querySelector('span:last-child').textContent = 
+            `Published on ${date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`;
+        }
+
+        updateDownloadUrl = data.downloadUrl;
+        
+        const modal = document.getElementById('updateModal');
+        const content = document.getElementById('updateModalContent');
+        modal.classList.remove('hidden');
+        
+        // Animate in
+        requestAnimationFrame(() => {
+          content.classList.remove('scale-90', 'opacity-0');
+          content.classList.add('scale-100', 'opacity-100');
+        });
+      }
+
+      function closeUpdateModal() {
+        const content = document.getElementById('updateModalContent');
+        content.classList.remove('scale-100', 'opacity-100');
+        content.classList.add('scale-90', 'opacity-0');
+        setTimeout(() => {
+          document.getElementById('updateModal').classList.add('hidden');
+        }, 300);
+      }
+
+      function downloadUpdate() {
+        if (updateDownloadUrl && window.electronAPI) {
+          window.electronAPI.openExternal(updateDownloadUrl);
+        } else if (updateDownloadUrl) {
+          window.open(updateDownloadUrl, '_blank');
+        }
+        closeUpdateModal();
+      }
+
+      // Check backend health and updates on load
       window.addEventListener('DOMContentLoaded', () => {
-        // Beri jeda sedikit agar config dan API_URL sudah diset
+        // Check backend health
         setTimeout(async () => {
           if (!window.API_URL) return;
           try {
@@ -288,6 +397,20 @@
             showToast('Failed to connect to backend.', 'error');
           }
         }, 500);
+
+        // Check for updates (only in Electron context)
+        setTimeout(async () => {
+          if (window.electronAPI && window.electronAPI.checkForUpdates) {
+            try {
+              const result = await window.electronAPI.checkForUpdates();
+              if (result.updateAvailable) {
+                showUpdateModal(result);
+              }
+            } catch (err) {
+              console.log('Update check skipped:', err.message);
+            }
+          }
+        }, 2000);
       });
     </script>
   </body>
