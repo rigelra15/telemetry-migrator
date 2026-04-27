@@ -8,9 +8,11 @@
     "dev": "electron .",
     "build": "electron-builder",
     "build-backend": "node build-backend.js",
-    "build-all": "npm run build-backend && npm run build"
+    "build-all": "npm run build-backend && npm run build",
+    "release": "npm version patch -m \"Release %s\" && git push origin main --follow-tags"
   },
   "keywords": [],
+
   "author": "",
   "license": "ISC",
   "build": {
@@ -19,6 +21,11 @@
     "directories": {
       "output": "dist"
     },
+    "publish": [
+      {
+        "provider": "github"
+      }
+    ],
     "files": [
       "main.js",
       "preload.js",
