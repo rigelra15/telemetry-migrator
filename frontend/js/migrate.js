@@ -603,7 +603,7 @@ async function loadMigrationSummary() {
 
   // Display batch size in summary
   const settingsData = await window.loadSession("migrationSettings");
-  const batchSize = settingsData?.batchSize || 100;
+  const batchSize = settingsData?.batchSize || 1000;
   const displayBatchSize = document.getElementById("displayBatchSize");
   if (displayBatchSize) {
     displayBatchSize.textContent = batchSize.toLocaleString();
@@ -843,9 +843,9 @@ async function startMigration() {
 
     progressBar.style.width = "20%";
 
-    // Get batch size from settings (default 100)
+    // Get batch size from settings (default 1000)
     const settingsData = await window.loadSession("migrationSettings");
-    const batchSize = settingsData?.batchSize || 100;
+    const batchSize = settingsData?.batchSize || 1000;
 
     // Start migration on backend
     const response = await axios.post(`${window.API_URL}/api/migrate`, {
@@ -1021,7 +1021,7 @@ function rerunMigration() {
 async function openMigrationSettings() {
   // Load saved batch size or default to 100
   const settingsData = await window.loadSession("migrationSettings");
-  const batchSize = settingsData?.batchSize || 100;
+  const batchSize = settingsData?.batchSize || 1000;
   document.getElementById("batchSizeInput").value = batchSize;
   document.getElementById("settingsModal").classList.remove("hidden");
 }

@@ -710,6 +710,12 @@ async def run_migration(params: MigrationRequest):
         total_records_fetched = 0
         total_records_posted = 0
         
+        # Adaptive batch size state — persists across days so server limits are learned once
+        current_batch_size = BATCH_SIZE
+        MIN_BATCH_SIZE = 10
+        consecutive_successes = 0
+        GROW_AFTER = 3  # grow back after 3 consecutive successes
+        
         async with httpx.AsyncClient(timeout=60.0, verify=False) as client:
             while current_day_start < end:
                 day_count += 1
@@ -869,12 +875,6 @@ async def run_migration(params: MigrationRequest):
                 
                 # Post data in batches (adaptive batch size)
                 if transformed and len(transformed) > 0:
-                    # Adaptive batch sizing: shrink on 413, grow back on consecutive successes
-                    current_batch_size = BATCH_SIZE
-                    MIN_BATCH_SIZE = 10
-                    consecutive_successes = 0
-                    GROW_AFTER = 3  # grow back after 3 consecutive successes
-
                     total_records = len(transformed)
                     log_with_timestamp(f"Posting {total_records} records for {day_str} (batch size: {current_batch_size})...")
 

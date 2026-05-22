@@ -84,7 +84,7 @@
       "totalDays": "Total Hari"
     },
     "settings": {
-      "batchSize": "Ukuran Batch (POST)"
+      "batchSize": "Ukuran Batch Maksimum (POST)"
     },
     "progress": {
       "title": "Progres Migrasi",

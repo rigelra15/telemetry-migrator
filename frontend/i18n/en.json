@@ -84,7 +84,7 @@
       "totalDays": "Total Days"
     },
     "settings": {
-      "batchSize": "Batch Size (POST)"
+      "batchSize": "Max Batch Size (POST)"
     },
     "progress": {
       "title": "Migration Progress",

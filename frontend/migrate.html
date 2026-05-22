@@ -341,9 +341,9 @@
       class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
       onclick="if (event.target === this) closeMigrationSettings();"
     >
-      <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-        <div class="flex items-center justify-between p-4 border-b">
-          <h3 class="font-semibold text-gray-800 flex items-center gap-2">
+      <div class="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 overflow-hidden">
+        <div class="flex items-center justify-between p-4 border-b" style="background-color: #F0F0FF;">
+          <h3 class="font-semibold flex items-center gap-2" style="color: #1E22AA;">
             <span class="iconify" data-icon="mdi:cog"></span>
             <span data-i18n="migrate.summary.settings">Migration Settings</span>
           </h3>
@@ -351,35 +351,33 @@
             onclick="closeMigrationSettings()"
             class="p-1 hover:bg-gray-100 rounded transition"
           >
-            <span
-              class="iconify text-xl text-gray-600"
-              data-icon="mdi:close"
-            ></span>
+            <span class="iconify text-xl text-gray-600" data-icon="mdi:close"></span>
           </button>
         </div>
         <div class="p-4 space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              <span
-                class="iconify inline-block"
-                data-icon="mdi:package-variant"
-              ></span>
-              <span data-i18n="migrate.settings.batchSize"
-                >Batch Size (POST)</span
-              >
+            <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1.5">
+              <span class="iconify" data-icon="mdi:package-variant" style="color: #1E22AA;"></span>
+              <span data-i18n="migrate.settings.batchSize">Max Batch Size (POST)</span>
             </label>
             <input
               id="batchSizeInput"
               type="number"
               min="1"
               max="2000"
-              value="100"
+              value="1000"
               class="w-full border border-gray-300 p-2 rounded-lg text-sm"
-              placeholder="Number of records per POST request"
+              placeholder="e.g. 500"
             />
-            <p class="text-xs text-gray-500 mt-1">
-              How many records to send in each POST request. Default: 100
-            </p>
+            <div class="mt-2 space-y-1">
+              <p class="text-xs text-gray-500">
+                Maximum records per POST request. System will <strong>auto-reduce</strong> if server returns HTTP 413, and grow back after 3 consecutive successes.
+              </p>
+              <div class="flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-lg" style="background:#1E22AA10; color:#1E22AA;">
+                <span class="iconify" data-icon="mdi:shield-check"></span>
+                <span>Safe limit: <strong>≤ 2000</strong> records. Higher values may cause 413 errors on some servers.</span>
+              </div>
+            </div>
           </div>
         </div>
         <div class="flex gap-3 p-4 border-t bg-gray-50">
