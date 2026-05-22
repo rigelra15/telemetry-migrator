@@ -116,18 +116,31 @@
             <span data-i18n="source.title">Source Configuration</span>
           </h2>
           
-          <!-- Language Toggle Button -->
-          <button
-            type="button"
-            id="langToggleBtn"
-            onclick="toggleLanguage()"
-            class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700"
-            title="Switch Language"
-          >
-            <span class="flag-icon iconify" data-icon="emojione:flag-for-united-states"></span>
-            <span class="lang-text">EN</span>
-            <span class="iconify" data-icon="mdi:translate"></span>
-          </button>
+          <div class="flex items-center gap-2">
+            <!-- Clear Form Button -->
+            <button
+              type="button"
+              onclick="clearSourceForm()"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-colors text-sm font-medium text-gray-600"
+              title="Clear all fields"
+            >
+              <span class="iconify" data-icon="mdi:eraser"></span>
+              <span data-i18n="source.buttons.clear">Clear</span>
+            </button>
+
+            <!-- Language Toggle Button -->
+            <button
+              type="button"
+              id="langToggleBtn"
+              onclick="toggleLanguage()"
+              class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700"
+              title="Switch Language"
+            >
+              <span class="flag-icon iconify" data-icon="emojione:flag-for-united-states"></span>
+              <span class="lang-text">EN</span>
+              <span class="iconify" data-icon="mdi:translate"></span>
+            </button>
+          </div>
         </div>
 
       <form id="senderForm" class="space-y-3">
@@ -147,13 +160,27 @@
                   <span class="tooltip-text">Tipe entitas ThingsBoard (DEVICE, ASSET, dll)</span>
                 </span>
               </label>
+              <select
+                id="senderEntityTypeSelect"
+                class="w-full border p-2 rounded-lg text-sm"
+                onchange="handleSourceEntityTypeChange()"
+                required
+              >
+                <option value="" data-i18n="fields.entityType.selectPlaceholder">-- Select Entity Type --</option>
+                <option value="DEVICE">DEVICE</option>
+                <option value="ASSET">ASSET</option>
+                <option value="ENTITY_VIEW">ENTITY_VIEW</option>
+                <option value="CUSTOMER">CUSTOMER</option>
+                <option value="USER">USER</option>
+                <option value="TENANT">TENANT</option>
+                <option value="OTHER" data-i18n="fields.entityType.otherOption">Other (manual input)</option>
+              </select>
               <input
                 id="senderEntityType"
-                class="w-full border p-2 rounded-lg text-sm uppercase"
-                data-i18n-placeholder="fields.entityType.placeholder"
-                placeholder="e.g., DEVICE, ASSET"
-                oninput="safeToggleSelectKeysButton(); safeToggleCheckSourceButton(); safeHandleEntityIdInput();"
-                required
+                class="w-full border p-2 rounded-lg text-sm uppercase mt-1 hidden"
+                data-i18n-placeholder="fields.entityType.manualPlaceholder"
+                placeholder="Type entity type manually..."
+                oninput="this.value = this.value.toUpperCase(); safeToggleSelectKeysButton(); safeToggleCheckSourceButton(); safeHandleEntityIdInput();"
               />
             </div>
 

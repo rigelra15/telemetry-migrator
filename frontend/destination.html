@@ -116,18 +116,31 @@
             <span data-i18n="destination.title">Destination - Target Configuration</span>
           </h2>
           
-          <!-- Language Toggle Button -->
-          <button
-            type="button"
-            id="langToggleBtn"
-            onclick="toggleLanguage()"
-            class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700"
-            title="Switch Language"
-          >
-            <span class="flag-icon iconify" data-icon="emojione:flag-for-united-states"></span>
-            <span class="lang-text">EN</span>
-            <span class="iconify" data-icon="mdi:translate"></span>
-          </button>
+          <div class="flex items-center gap-2">
+            <!-- Clear Form Button -->
+            <button
+              type="button"
+              onclick="clearDestinationForm()"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-colors text-sm font-medium text-gray-600"
+              title="Clear all fields"
+            >
+              <span class="iconify" data-icon="mdi:eraser"></span>
+              <span data-i18n="destination.buttons.clear">Clear</span>
+            </button>
+
+            <!-- Language Toggle Button -->
+            <button
+              type="button"
+              id="langToggleBtn"
+              onclick="toggleLanguage()"
+              class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700"
+              title="Switch Language"
+            >
+              <span class="flag-icon iconify" data-icon="emojione:flag-for-united-states"></span>
+              <span class="lang-text">EN</span>
+              <span class="iconify" data-icon="mdi:translate"></span>
+            </button>
+          </div>
         </div>
 
       <form id="receiverForm" class="space-y-3">
@@ -139,13 +152,27 @@
               <span class="tooltip-text">A string value representing the entity type. For example, 'DEVICE'</span>
             </span>
           </label>
+          <select
+            id="receiverEntityTypeSelect"
+            class="w-full border p-2 rounded-lg text-sm"
+            onchange="handleDestEntityTypeChange()"
+            required
+          >
+            <option value="" data-i18n="fields.entityType.selectPlaceholder">-- Select Entity Type --</option>
+            <option value="DEVICE">DEVICE</option>
+            <option value="ASSET">ASSET</option>
+            <option value="ENTITY_VIEW">ENTITY_VIEW</option>
+            <option value="CUSTOMER">CUSTOMER</option>
+            <option value="USER">USER</option>
+            <option value="TENANT">TENANT</option>
+            <option value="OTHER" data-i18n="fields.entityType.otherOption">Other (manual input)</option>
+          </select>
           <input
             id="receiverEntityType"
-            class="w-full border p-2 rounded-lg text-sm uppercase"
-            data-i18n-placeholder="destination.fields.targetEntityTypePlaceholder"
-            placeholder="Enter target entity type (asset, device, etc.)"
-            oninput="safeToggleCheckDestButton(); safeHandleDestEntityIdInput();"
-            required
+            class="w-full border p-2 rounded-lg text-sm uppercase mt-1 hidden"
+            data-i18n-placeholder="fields.entityType.manualPlaceholder"
+            placeholder="Type entity type manually..."
+            oninput="this.value = this.value.toUpperCase(); safeToggleCheckDestButton(); safeHandleDestEntityIdInput();"
           />
         </div>
 

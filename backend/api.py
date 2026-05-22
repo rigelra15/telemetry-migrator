@@ -867,23 +867,31 @@ async def run_migration(params: MigrationRequest):
                     current_day_start = day_end
                     continue
                 
-                # Post data in batches
+                # Post data in batches (adaptive batch size)
                 if transformed and len(transformed) > 0:
-                    total_chunks = (len(transformed) + BATCH_SIZE - 1) // BATCH_SIZE
-                    log_with_timestamp(f"Posting {len(transformed)} records for {day_str} (batch size: {BATCH_SIZE})...")
-                    
-                    # Update total batches
-                    migration_status["totalBatches"] += total_chunks
-                    
+                    # Adaptive batch sizing: shrink on 413, grow back on consecutive successes
+                    current_batch_size = BATCH_SIZE
+                    MIN_BATCH_SIZE = 10
+                    consecutive_successes = 0
+                    GROW_AFTER = 3  # grow back after 3 consecutive successes
+
+                    total_records = len(transformed)
+                    log_with_timestamp(f"Posting {total_records} records for {day_str} (batch size: {current_batch_size})...")
+
                     posted_count = 0
                     failed_count = 0
-                    
-                    for i in range(total_chunks):
-                        chunk = transformed[i * BATCH_SIZE:(i + 1) * BATCH_SIZE]
+                    i = 0
+                    batch_num = 0
+
+                    while i < total_records:
+                        chunk = transformed[i:i + current_batch_size]
+                        # Recalculate total_chunks estimate for display (approximate)
+                        remaining = total_records - i
+                        est_total = batch_num + max(1, (remaining + current_batch_size - 1) // current_batch_size)
+                        migration_status["totalBatches"] = migration_status["totalBatches"] - (est_total - batch_num) + est_total
                         migration_status["currentBatch"] += 1
-                        batch_num = i + 1
-                        
-                        # Calculate ETA
+                        batch_num += 1
+
                         if migration_status["startTime"]:
                             eta = calculate_eta(
                                 migration_status["startTime"],
@@ -891,21 +899,20 @@ async def run_migration(params: MigrationRequest):
                                 migration_status["totalBatches"]
                             )
                             migration_status["eta"] = eta
-                        
+
                         # Post to destination
                         post_response = await client.post(
                             f"{BASE_URL}/api/plugins/telemetry/{params.targetEntityType}/{params.targetEntityId}/timeseries/ANY",
                             headers={"X-Authorization": f"Bearer {dest_token}"},
                             json=chunk
                         )
-                        
+
                         # Handle 401 by refreshing destination token
                         if post_response.status_code == 401:
                             log_with_timestamp("WARNING: Destination token expired, refreshing...")
                             new_dest_token = await refresh_access_token("destination")
                             if new_dest_token:
                                 dest_token = new_dest_token
-                                # Retry post with new token
                                 post_response = await client.post(
                                     f"{BASE_URL}/api/plugins/telemetry/{params.targetEntityType}/{params.targetEntityId}/timeseries/ANY",
                                     headers={"X-Authorization": f"Bearer {dest_token}"},
@@ -914,22 +921,47 @@ async def run_migration(params: MigrationRequest):
                                 log_with_timestamp("Destination token refreshed successfully")
                             else:
                                 raise Exception("Destination token expired and refresh failed")
-                        
+
                         if post_response.status_code in [200, 201]:
                             posted_count += len(chunk)
-                            log_with_timestamp(f"  Batch {batch_num}/{total_chunks}: OK {len(chunk)} records posted")
+                            consecutive_successes += 1
+                            log_with_timestamp(f"  Batch {batch_num}: OK {len(chunk)} records (batch_size={current_batch_size})")
+
+                            # Grow batch size back after consecutive successes
+                            if consecutive_successes >= GROW_AFTER and current_batch_size < BATCH_SIZE:
+                                new_size = min(current_batch_size * 2, BATCH_SIZE)
+                                log_with_timestamp(f"  [Adaptive] Batch size increased: {current_batch_size} → {new_size}")
+                                current_batch_size = new_size
+                                consecutive_successes = 0
+
+                            i += len(chunk)  # advance only on success
+
+                        elif post_response.status_code == 413:
+                            consecutive_successes = 0
+                            if current_batch_size <= MIN_BATCH_SIZE:
+                                # Can't shrink further, skip this chunk
+                                failed_count += len(chunk)
+                                log_with_timestamp(f"  Batch {batch_num}: FAILED (HTTP 413, batch_size={current_batch_size} already at minimum, skipping {len(chunk)} records)")
+                                i += len(chunk)
+                            else:
+                                new_size = max(current_batch_size // 2, MIN_BATCH_SIZE)
+                                log_with_timestamp(f"  Batch {batch_num}: FAILED (HTTP 413) → shrinking batch_size {current_batch_size} → {new_size}, retrying...")
+                                current_batch_size = new_size
+                                # Do NOT advance i — retry same position with smaller batch
                         else:
+                            consecutive_successes = 0
                             failed_count += len(chunk)
-                            log_with_timestamp(f"  Batch {batch_num}/{total_chunks}: FAILED (HTTP {post_response.status_code})")
-                        
-                        await asyncio.sleep(0.1)  # Small delay between chunks
-                    
+                            log_with_timestamp(f"  Batch {batch_num}: FAILED (HTTP {post_response.status_code})")
+                            i += len(chunk)
+
+                        await asyncio.sleep(0.1)
+
                     if failed_count == 0:
                         log_with_timestamp(f"SUCCESS: All {posted_count} records posted for {day_str}")
                         total_records_posted += posted_count
                         successful_days += 1
                     else:
-                        log_with_timestamp(f"WARNING: Posted {posted_count}/{len(transformed)} records for {day_str} ({failed_count} failed)")
+                        log_with_timestamp(f"WARNING: Posted {posted_count}/{total_records} records for {day_str} ({failed_count} failed)")
                         total_records_posted += posted_count
                 else:
                     log_with_timestamp(f"INFO: No data to post for {day_str}, moving to next day")

@@ -98,8 +98,15 @@ function startPythonBackend() {
     console.log(`Backend: ${data}`);
   });
 
+  // uvicorn and Python logging write INFO/WARNING to stderr by default — not actual errors
   pyProcess.stderr.on('data', (data) => {
-    console.error(`Backend Error: ${data}`);
+    const msg = data.toString();
+    const isActualError = msg.includes('Error') || msg.includes('Exception') || msg.includes('Traceback');
+    if (isActualError) {
+      console.error(`Backend Error: ${msg}`);
+    } else {
+      console.log(`Backend: ${msg}`);
+    }
   });
 
   pyProcess.on('error', (err) => {

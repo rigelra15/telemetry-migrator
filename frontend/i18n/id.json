@@ -67,7 +67,8 @@
       "next": "Mulai Migrasi",
       "previous": "Sebelumnya: Sumber",
       "cancel": "Batal",
-      "applyConfig": "Terapkan Konfigurasi"
+      "applyConfig": "Terapkan Konfigurasi",
+      "clear": "Bersihkan Form"
     }
   },
   "migrate": {
@@ -132,6 +133,9 @@
     "entityType": {
       "label": "Tipe Entity",
       "placeholder": "contoh: DEVICE, ASSET",
+      "selectPlaceholder": "-- Pilih Tipe Entity --",
+      "otherOption": "Lainnya (input manual)",
+      "manualPlaceholder": "Ketik tipe entity secara manual...",
       "tooltip": "Tipe entitas ThingsBoard (DEVICE, ASSET, dll)"
     },
     "entityId": {

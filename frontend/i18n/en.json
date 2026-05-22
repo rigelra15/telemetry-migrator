@@ -67,7 +67,8 @@
       "next": "Start Migration",
       "previous": "Previous: Source",
       "cancel": "Cancel",
-      "applyConfig": "Apply Config"
+      "applyConfig": "Apply Config",
+      "clear": "Clear Form"
     }
   },
   "migrate": {
@@ -132,6 +133,9 @@
     "entityType": {
       "label": "Entity Type",
       "placeholder": "e.g., DEVICE, ASSET",
+      "selectPlaceholder": "-- Select Entity Type --",
+      "otherOption": "Other (manual input)",
+      "manualPlaceholder": "Type entity type manually...",
       "tooltip": "ThingsBoard entity type (DEVICE, ASSET, etc.)"
     },
     "entityId": {

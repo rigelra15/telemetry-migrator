@@ -36,6 +36,42 @@ function handleDestEntityIdInput() {
   }
 }
 
+/**
+ * Handle entity type dropdown change for destination
+ */
+function handleDestEntityTypeChange() {
+  const select = document.getElementById("receiverEntityTypeSelect");
+  const input = document.getElementById("receiverEntityType");
+  const val = select.value;
+
+  if (val === 'OTHER') {
+    input.classList.remove('hidden');
+    input.required = true;
+    input.value = '';
+    input.focus();
+  } else {
+    input.classList.add('hidden');
+    input.required = false;
+    input.value = val;
+  }
+
+  safeToggleCheckDestButton();
+  safeHandleDestEntityIdInput();
+}
+
+window.handleDestEntityTypeChange = handleDestEntityTypeChange;
+
+/**
+ * Get the effective entity type value for destination
+ */
+function getDestEntityType() {
+  const select = document.getElementById("receiverEntityTypeSelect");
+  if (select.value === 'OTHER') {
+    return document.getElementById("receiverEntityType").value.trim().toUpperCase();
+  }
+  return select.value;
+}
+
 // Export immediately after definition to avoid issues
 window.handleDestEntityIdInput = handleDestEntityIdInput;
 console.log('Exported handleDestEntityIdInput to window:', typeof window.handleDestEntityIdInput);
@@ -54,11 +90,24 @@ async function initDestinationPage() {
   const savedTarget = await window.loadSession('targetConfig');
   if (savedTarget) {
     try {
-      if (savedTarget.targetEntityType) document.getElementById("receiverEntityType").value = savedTarget.targetEntityType;
+      if (savedTarget.targetEntityType) {
+        const select = document.getElementById("receiverEntityTypeSelect");
+        const input = document.getElementById("receiverEntityType");
+        const knownTypes = ['DEVICE', 'ASSET', 'ENTITY_VIEW', 'CUSTOMER', 'USER', 'TENANT'];
+        if (knownTypes.includes(savedTarget.targetEntityType)) {
+          select.value = savedTarget.targetEntityType;
+          input.value = savedTarget.targetEntityType;
+          input.classList.add('hidden');
+        } else {
+          select.value = 'OTHER';
+          input.value = savedTarget.targetEntityType;
+          input.classList.remove('hidden');
+          input.required = true;
+        }
+      }
       if (savedTarget.targetEntityId) document.getElementById("receiverEntityId").value = savedTarget.targetEntityId;
       if (savedTarget.scope) document.getElementById("receiverScope").value = savedTarget.scope;
       
-      // Restore entity name if available (or show dash)
       const entityNameDisplay = document.getElementById("destEntityNameDisplay");
       if (savedTarget.targetEntityName) {
         entityNameDisplay.textContent = savedTarget.targetEntityName;
@@ -66,10 +115,7 @@ async function initDestinationPage() {
         entityNameDisplay.textContent = "-";
       }
       
-      // Enable Check button if entity type and ID are filled
-      if (window.toggleCheckDestButton) {
-        window.toggleCheckDestButton();
-      }
+      if (window.toggleCheckDestButton) window.toggleCheckDestButton();
     } catch (e) {
       console.error("Failed to restore destination form data:", e);
     }
@@ -82,7 +128,11 @@ async function initDestinationPage() {
     const params = await window.loadSession('migrationParams');
     if (!params) return alert("Missing source parameters");
 
-    const targetEntityType = document.getElementById("receiverEntityType").value.toUpperCase();
+    const targetEntityType = getDestEntityType();
+    if (!targetEntityType) {
+      alert("Please select or enter a Target Entity Type.");
+      return;
+    }
     const targetEntityId = document.getElementById("receiverEntityId").value;
     const scope = document.getElementById("receiverScope").value;
 
@@ -110,10 +160,9 @@ async function initDestinationPage() {
  * Toggle Check Entity button state based on entity type and ID
  */
 function toggleCheckDestButton() {
-  const entityType = document.getElementById("receiverEntityType")?.value.trim();
+  const entityType = getDestEntityType();
   const entityId = document.getElementById("receiverEntityId")?.value.trim();
   const checkBtn = document.getElementById("checkDestEntityBtn");
-  
   if (checkBtn) {
     checkBtn.disabled = !(entityType && entityId);
   }
@@ -123,39 +172,27 @@ function toggleCheckDestButton() {
  * Check entity name for destination entity
  */
 async function checkDestEntityName() {
-  const entityType = document.getElementById("receiverEntityType").value.trim();
+  const entityType = getDestEntityType();
   const entityId = document.getElementById("receiverEntityId").value.trim();
   
-  if (!entityType || !entityId) {
-    return; // Don't show alert, just return silently
-  }
+  if (!entityType || !entityId) return;
   
   const btn = document.getElementById("checkDestEntityBtn");
   const entityNameDisplay = document.getElementById("destEntityNameDisplay");
   const originalHTML = btn ? btn.innerHTML : '';
   
   try {
-    // Show loading state on button only
     if (btn) {
       btn.disabled = true;
       btn.innerHTML = '<span class="iconify animate-spin" data-icon="mdi:loading"></span> Checking...';
     }
     
     const result = await window.checkEntityName(entityType, entityId, 'destination');
-    
-    if (result.success) {
-      // Show entity name
-      entityNameDisplay.textContent = result.name;
-    } else {
-      // Show dash if not found
-      entityNameDisplay.textContent = "-";
-    }
+    entityNameDisplay.textContent = result.success ? result.name : "-";
   } catch (error) {
     console.error("Error checking entity name:", error);
-    // Show dash on error
     entityNameDisplay.textContent = "-";
   } finally {
-    // Restore button state
     if (btn) {
       btn.disabled = false;
       btn.innerHTML = originalHTML;
@@ -187,6 +224,30 @@ window.initDestinationPage = initDestinationPage;
 window.checkDestEntityName = checkDestEntityName;
 window.toggleCheckDestButton = toggleCheckDestButton;
 // handleDestEntityIdInput already exported earlier
+
+/**
+ * Clear all destination form fields and saved session
+ */
+async function clearDestinationForm() {
+  if (!confirm('Clear all fields?')) return;
+
+  // Reset dropdown and hide manual input
+  document.getElementById("receiverEntityTypeSelect").value = '';
+  const input = document.getElementById("receiverEntityType");
+  input.value = '';
+  input.classList.add('hidden');
+  input.required = false;
+
+  document.getElementById("receiverEntityId").value = '';
+  document.getElementById("destEntityNameDisplay").textContent = '-';
+
+  const checkBtn = document.getElementById("checkDestEntityBtn");
+  if (checkBtn) checkBtn.disabled = true;
+
+  await window.clearSession('targetConfig');
+}
+
+window.clearDestinationForm = clearDestinationForm;
 
 console.log('All destination.js functions exported:', {
   initDestinationPage: typeof window.initDestinationPage,

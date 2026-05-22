@@ -7,32 +7,58 @@ let entityIdCheckTimer = null;
  * Handle entity ID input with debounce for auto-check
  */
 function handleEntityIdInput() {
-  // Clear previous timer
-  if (entityIdCheckTimer) {
-    clearTimeout(entityIdCheckTimer);
-  }
+  if (entityIdCheckTimer) clearTimeout(entityIdCheckTimer);
   
-  const entityType = document.getElementById("senderEntityType")?.value.trim();
+  const entityType = getSourceEntityType();
   const entityId = document.getElementById("senderEntityId")?.value.trim();
   
-  // Only auto-check if both fields are filled
   if (entityType && entityId) {
-    // Set new timer for 1.5 seconds (no loading state shown)
     entityIdCheckTimer = setTimeout(() => {
       checkSourceEntityName();
     }, 1500);
   } else {
-    // Clear entity name if fields are empty
     const entityNameDisplay = document.getElementById("sourceEntityNameDisplay");
-    if (entityNameDisplay) {
-      entityNameDisplay.textContent = "-";
-    }
+    if (entityNameDisplay) entityNameDisplay.textContent = "-";
   }
 }
 
 /**
- * Initialize source page
+ * Handle entity type dropdown change for source
+ * Shows manual input field when "OTHER" is selected
  */
+function handleSourceEntityTypeChange() {
+  const select = document.getElementById("senderEntityTypeSelect");
+  const input = document.getElementById("senderEntityType");
+  const val = select.value;
+
+  if (val === 'OTHER') {
+    input.classList.remove('hidden');
+    input.required = true;
+    input.value = '';
+    input.focus();
+  } else {
+    input.classList.add('hidden');
+    input.required = false;
+    input.value = val; // sync value to hidden input so form logic still works
+  }
+
+  safeToggleSelectKeysButton();
+  safeToggleCheckSourceButton();
+  safeHandleEntityIdInput();
+}
+
+window.handleSourceEntityTypeChange = handleSourceEntityTypeChange;
+
+/**
+ * Get the effective entity type value (from dropdown or manual input)
+ */
+function getSourceEntityType() {
+  const select = document.getElementById("senderEntityTypeSelect");
+  if (select.value === 'OTHER') {
+    return document.getElementById("senderEntityType").value.trim().toUpperCase();
+  }
+  return select.value;
+}
 async function initSourcePage() {
   const senderForm = document.getElementById("senderForm");
   if (!senderForm) return;
@@ -44,8 +70,23 @@ async function initSourcePage() {
   const savedParams = await window.loadSession('migrationParams');
   if (savedParams) {
     try {
-      // Required fields
-      if (savedParams.entityType) document.getElementById("senderEntityType").value = savedParams.entityType;
+      // Restore entity type — set dropdown, show manual input if needed
+      if (savedParams.entityType) {
+        const select = document.getElementById("senderEntityTypeSelect");
+        const input = document.getElementById("senderEntityType");
+        const knownTypes = ['DEVICE', 'ASSET', 'ENTITY_VIEW', 'CUSTOMER', 'USER', 'TENANT'];
+        if (knownTypes.includes(savedParams.entityType)) {
+          select.value = savedParams.entityType;
+          input.value = savedParams.entityType;
+          input.classList.add('hidden');
+        } else {
+          select.value = 'OTHER';
+          input.value = savedParams.entityType;
+          input.classList.remove('hidden');
+          input.required = true;
+        }
+      }
+
       if (savedParams.entityId) document.getElementById("senderEntityId").value = savedParams.entityId;
       if (savedParams.keys) document.getElementById("senderKeys").value = savedParams.keys;
       
@@ -76,15 +117,8 @@ async function initSourcePage() {
       const rangeMode = document.getElementById("rangeMode");
       if (rangeMode && savedParams.rangeMode) rangeMode.value = savedParams.rangeMode;
       
-      // Enable Select Keys button if entity type and ID are filled
-      if (window.toggleSelectKeysButton) {
-        window.toggleSelectKeysButton();
-      }
-      
-      // Enable Check button if entity type and ID are filled
-      if (window.toggleCheckSourceButton) {
-        window.toggleCheckSourceButton();
-      }
+      if (window.toggleSelectKeysButton) window.toggleSelectKeysButton();
+      if (window.toggleCheckSourceButton) window.toggleCheckSourceButton();
     } catch (e) {
       console.error("Failed to restore source form data:", e);
     }
@@ -94,10 +128,15 @@ async function initSourcePage() {
   senderForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
+    const entityType = getSourceEntityType();
+    if (!entityType) {
+      alert("Please select or enter an Entity Type.");
+      return;
+    }
+
     const rangeMode = document.getElementById("rangeMode");
     const params = {
-      // Required fields
-      entityType: document.getElementById("senderEntityType").value.toUpperCase(),
+      entityType: entityType,
       entityId: document.getElementById("senderEntityId").value,
       keys: document.getElementById("senderKeys").value.trim(),
       start: window.convertToMillisUTC(document.getElementById("senderStart").value),
@@ -108,7 +147,6 @@ async function initSourcePage() {
         : null
     };
 
-    // Add optional fields if provided
     const intervalType = document.getElementById("intervalType").value;
     if (intervalType) params.intervalType = intervalType;
     
@@ -130,10 +168,7 @@ async function initSourcePage() {
     const useStrictDataTypes = document.getElementById("useStrictDataTypes").checked;
     if (useStrictDataTypes) params.useStrictDataTypes = true;
 
-    // Save to backend file storage
     await window.saveSession('migrationParams', params);
-    
-    // Save to history
     await window.addToHistory('source', params);
 
     window.location.href = "destination.html";
@@ -144,10 +179,9 @@ async function initSourcePage() {
  * Toggle Check Entity button state based on entity type and ID
  */
 function toggleCheckSourceButton() {
-  const entityType = document.getElementById("senderEntityType")?.value.trim();
+  const entityType = getSourceEntityType();
   const entityId = document.getElementById("senderEntityId")?.value.trim();
   const checkBtn = document.getElementById("checkSourceEntityBtn");
-  
   if (checkBtn) {
     checkBtn.disabled = !(entityType && entityId);
   }
@@ -157,14 +191,12 @@ function toggleCheckSourceButton() {
  * Check entity name for source entity
  */
 async function checkSourceEntityName() {
-  const entityType = document.getElementById("senderEntityType").value.trim();
+  const entityType = getSourceEntityType();
   const entityId = document.getElementById("senderEntityId").value.trim();
   const entityNameDisplay = document.getElementById("sourceEntityNameDisplay");
   
   if (!entityType || !entityId) {
-    if (entityNameDisplay) {
-      entityNameDisplay.textContent = "-";
-    }
+    if (entityNameDisplay) entityNameDisplay.textContent = "-";
     return;
   }
   
@@ -172,7 +204,6 @@ async function checkSourceEntityName() {
   const originalHTML = btn ? btn.innerHTML : null;
   
   try {
-    // Show loading state on button only
     if (btn) {
       btn.disabled = true;
       btn.innerHTML = '<span class="iconify animate-spin" data-icon="mdi:loading"></span> Checking...';
@@ -180,24 +211,13 @@ async function checkSourceEntityName() {
     
     const result = await window.checkEntityName(entityType, entityId, 'source');
     
-    if (result.success && result.name) {
-      // Show entity name as plain text
-      if (entityNameDisplay) {
-        entityNameDisplay.textContent = result.name;
-      }
-    } else {
-      // Show dash if not found
-      if (entityNameDisplay) {
-        entityNameDisplay.textContent = '-';
-      }
+    if (entityNameDisplay) {
+      entityNameDisplay.textContent = (result.success && result.name) ? result.name : '-';
     }
   } catch (error) {
     console.error("Error checking entity name:", error);
-    if (entityNameDisplay) {
-      entityNameDisplay.textContent = '-';
-    }
+    if (entityNameDisplay) entityNameDisplay.textContent = '-';
   } finally {
-    // Restore button state
     if (btn && originalHTML) {
       btn.disabled = false;
       btn.innerHTML = originalHTML;
@@ -229,6 +249,45 @@ window.initSourcePage = initSourcePage;
 window.checkSourceEntityName = checkSourceEntityName;
 window.toggleCheckSourceButton = toggleCheckSourceButton;
 window.handleEntityIdInput = handleEntityIdInput;
+
+/**
+ * Clear all source form fields and saved session
+ */
+async function clearSourceForm() {
+  if (!confirm('Clear all fields?')) return;
+
+  // Reset dropdown and hide manual input
+  document.getElementById("senderEntityTypeSelect").value = '';
+  const input = document.getElementById("senderEntityType");
+  input.value = '';
+  input.classList.add('hidden');
+  input.required = false;
+
+  document.getElementById("senderEntityId").value = '';
+  document.getElementById("senderKeys").value = '';
+  document.getElementById("senderStart").value = '';
+  document.getElementById("senderEnd").value = '';
+  document.getElementById("sourceEntityNameDisplay").textContent = '-';
+
+  // Clear optional fields
+  document.getElementById("intervalType").value = '';
+  document.getElementById("interval").value = '';
+  document.getElementById("timeZone").value = '';
+  document.getElementById("senderLimit").value = '';
+  document.getElementById("agg").value = '';
+  document.getElementById("orderBy").value = '';
+  document.getElementById("useStrictDataTypes").checked = false;
+
+  // Disable buttons
+  const selectBtn = document.getElementById("selectKeysBtn");
+  const checkBtn = document.getElementById("checkSourceEntityBtn");
+  if (selectBtn) selectBtn.disabled = true;
+  if (checkBtn) checkBtn.disabled = true;
+
+  await window.clearSession('migrationParams');
+}
+
+window.clearSourceForm = clearSourceForm;
 
 // Auto-initialize if on source page when DOM is ready
 if (document.readyState === 'loading') {

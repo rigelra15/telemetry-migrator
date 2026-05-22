@@ -72,6 +72,7 @@
     ]
   },
   "devDependencies": {
+    "chokidar": "^3.6.0",
     "electron": "^30.0.0",
     "electron-builder": "^24.13.3"
   },
