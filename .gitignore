@@ -37,17 +37,19 @@ ENV/
 .env.*.local
 
 # Auth & Config Files (Sensitive)
-backend/auth/*.txt
+backend/auth/
 backend/config/*.json
 backend/config/*.txt
+backend/config.json
 frontend/config.json
 
-# Logs
-backend/logs/**/*
+# Runtime data (session, history, logs) — user-specific, not for repo
+backend/data/
+backend/logs/
 *.log
 
 # Temp files
-backend/temp/**/*
+backend/temp/
 
 # Frontend
 frontend/config.json
